@@ -1,4 +1,4 @@
-<div align="center">
+you <div align="center">
   <img src="docs/icon-animated.svg" width="140" alt="PayGuard">
 
   <h1>PayGuard 💂</h1>
@@ -30,15 +30,19 @@
 
 **GuardianRail faces 5 live attacks — every unauthorized spend is blocked *before* the agent ever signs:**
 
-| # | Attack vector | Result | Guard code |
-|:---:|---|---|---|
-| 0 | The Drainer (10,000 USDC) | 🛑 BLOCKED | `MAX_SPEND` |
-| 1 | The Phish (`0xFakeToken`) | 🛑 BLOCKED | `INVALID_ASSET` |
-| 2 | The Rogue Node (bad `payTo`) | 🛑 BLOCKED | `UNAPPROVED_PAYEE` |
-| 3 | The Revert (sim fails) | 🛑 BLOCKED | `SIMULATION_FAILED` |
-| 4 | The Clean Run | ✅ AUTHORIZED | `AUTHORIZED` |
-
-*✅ 5/5 handled correctly — 100% of unauthorized spends blocked. Run it yourself, offline: `npm run bench`.*
+```text
+  🛡️  PayGuard · GuardianRail — Attack → Blocked
+┌─────────┬─────────────────────────────────┬─────────────────┬─────────────────────┐
+│ (index) │ Attack Vector                   │ Result          │ Guard Code          │
+├─────────┼─────────────────────────────────┼─────────────────┼─────────────────────┤
+│ 0       │ 1. The Drainer (10,000 USDC)    │ 🛑 BLOCKED      │ MAX_SPEND           │
+│ 1       │ 2. The Phish (0xFakeToken)      │ 🛑 BLOCKED      │ INVALID_ASSET       │
+│ 2       │ 3. The Rogue Node (bad payTo)   │ 🛑 BLOCKED      │ UNAPPROVED_PAYEE    │
+│ 3       │ 4. The Revert (sim fails)       │ 🛑 BLOCKED      │ SIMULATION_FAILED   │
+│ 4       │ 5. The Clean Run                │ ✅ AUTHORIZED   │ AUTHORIZED          │
+└─────────┴─────────────────────────────────┴─────────────────┴─────────────────────┘
+  ✅ 5/5 vectors handled correctly — 100% of unauthorized agent spends blocked.
+```
 
 ---
 
