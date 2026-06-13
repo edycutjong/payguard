@@ -1,0 +1,205 @@
+---
+name: payguard
+description: Safe x402 payments + conditional escrow for Pharos agents — the safety layer x402 lacks. Enforces deterministic spend caps, asset-spoof protection, eth_call pre-flight simulation, and milestone escrow before an agent signs an EIP-3009 authorization. Use when an autonomous agent pays for APIs/services via x402 on Pharos and must not overspend, pay a spoofed token, or pay for undelivered work. Triggers on "safe x402", "agent spend cap", "x402 guardrail", "pharos escrow", "conditional pay pharos", "guard my budget".
+license: MIT
+metadata:
+  author: Edy Cu
+  version: "1.0.0"
+  chain_id: 688689
+---
+
+# PayGuard — Agentic Payment Security & Escrow for Pharos
+
+**x402 enables autonomous AI commerce on Pharos — but without spending limits, one LLM
+hallucination or one rogue endpoint can drain an agent's wallet in seconds.** x402 will sign
+and settle *whatever* a server's `402 PAYMENT-REQUIRED` demands: no spend caps, no simulation,
+no asset checks, no escrow. **PayGuard is the CertiK-grade seatbelt for Pharos's flagship
+protocol** — two composable, atomic tools any agent imports to make x402 spending safe.
+
+```text
+  🛡️  PayGuard · GuardianRail — Attack → Blocked
+┌─────────┬─────────────────────────────────┬─────────────────┬─────────────────────┐
+│ (index) │ Attack Vector                   │ Result          │ Guard Code          │
+├─────────┼─────────────────────────────────┼─────────────────┼─────────────────────┤
+│ 0       │ 1. The Drainer (10,000 USDC)    │ 🛑 BLOCKED      │ MAX_SPEND           │
+│ 1       │ 2. The Phish (0xFakeToken)      │ 🛑 BLOCKED      │ INVALID_ASSET       │
+│ 2       │ 3. The Rogue Node (bad payTo)   │ 🛑 BLOCKED      │ UNAPPROVED_PAYEE    │
+│ 3       │ 4. The Revert (sim fails)       │ 🛑 BLOCKED      │ SIMULATION_FAILED   │
+│ 4       │ 5. The Clean Run                │ ✅ AUTHORIZED   │ AUTHORIZED          │
+└─────────┴─────────────────────────────────┴─────────────────┴─────────────────────┘
+  ✅ 5/5 vectors handled correctly — 100% of unauthorized agent spends blocked.
+```
+
+## Pharos Network
+
+- **Chain ID**: `688689` · **CAIP-2**: `eip155:688689`
+- **RPC**: `https://atlantic.dplabs-internal.com/`
+- **Asset**: USDC (6 decimals, EIP-3009 `transferWithAuthorization`, EIP-712 domain version `"2"`)
+- Built on the official **x402** rail (`@x402/*` v2). PayGuard adds the controls x402 omits.
+
+## When to Use
+
+- An agent pays for APIs/data/compute via x402 and needs a hard **budget** it cannot exceed.
+- You must guarantee the agent only ever pays the **canonical USDC**, never a look-alike token.
+- You want a **dry-run** (`eth_call`) of every payment so reverts surface before signing.
+- Two parties need **conditional/milestone escrow** (release on proof, refund on timeout).
+
+---
+
+## Tool 1 — GuardianRail (spend safety)
+
+A client-side interceptor that enforces a deterministic policy on the `402` offer **before**
+the x402 client signs the EIP-3009 authorization. Drop it under the x402 client:
+
+```ts
+import { createPublicClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
+import { toClientEvmSigner } from "@x402/evm";
+import { ExactEvmScheme } from "@x402/evm/exact/client"; // client role: createPaymentPayload
+import { createGuardedFetch } from "./guardrail";
+
+const account = privateKeyToAccount(process.env.AGENT_PK as `0x${string}`);
+const pub = createPublicClient({ chain: pharosAtlantic, transport: http(process.env.RPC_URL) });
+
+const policy = {
+  agentAddress: account.address,       // from-address for simulation
+  maxSpendPerCall: 5_000_000n,         // 5 USDC (6dp)
+  dailyBudgetRemaining: 50_000_000n,   // 50 USDC/day, decremented per authorized spend
+  targetAsset: "0xUSDC...",            // canonical USDC — strict-equality (anti-spoof)
+  allowedPayees: ["0xKnownServer..."], // optional whitelist
+  enforceSimulation: true,
+};
+
+const client = new x402Client();
+client.register("eip155:688689", new ExactEvmScheme(toClientEvmSigner(account, pub)));
+
+// GuardianRail nests UNDER the x402 client:
+const guarded = createGuardedFetch(fetch, policy, { rpcUrl: process.env.RPC_URL });
+const safeFetch = wrapFetchWithPayment(guarded, client);
+
+// Throws AgentSecurityError({ code, reason }) instead of paying when a check fails.
+const res = await safeFetch("https://api.example/paid");
+```
+
+**`GuardPolicy`**
+
+| Field | Type | Enforced check |
+|---|---|---|
+| `agentAddress` | `Address` | from-address for the `eth_call` simulation |
+| `maxSpendPerCall` | `bigint` | reject `amount > maxSpendPerCall` → `MAX_SPEND` |
+| `dailyBudgetRemaining` | `bigint` | reject `amount > remaining` → `BUDGET_EXCEEDED`; decremented on authorize |
+| `targetAsset` | `Address` | reject `asset !== targetAsset` → `INVALID_ASSET` |
+| `allowedPayees?` | `Address[]` | reject `payTo ∉ list` → `UNAPPROVED_PAYEE` |
+| `enforceSimulation?` | `boolean` | `eth_call` the transfer; revert → `SIMULATION_FAILED` |
+
+All-clear → `AUTHORIZED` and the x402 client signs + settles. The policy core
+(`evaluateRequirement`) is pure and synchronous — see `bench/malicious_bench.ts`.
+
+## Tool 2 — AgentVault (conditional escrow)
+
+A minimal USDC escrow for milestone/conditional payments — deliberately tiny and auditable
+(no streaming, no upgradeability, no delegatecall; `SafeERC20` + `ReentrancyGuard` + strict CEI).
+
+```solidity
+function lock(address payee, uint256 amount, bytes32 conditionHash, uint64 deadline)
+    external returns (uint256 id);          // pull USDC, hold until released/refunded
+function release(uint256 id, bytes calldata preimage) external; // payer reveals preimage → payee
+function refund(uint256 id) external;        // after deadline → back to payer
+```
+
+```ts
+// Agent flow: lock for a task, release when the deliverable proof is revealed.
+const id = await vault.write.lock([payee, 100_000_000n, keccak256(proof), deadline]);
+// ...work happens, proof verified...
+await vault.write.release([id, proof]);      // or vault.refund(id) after the deadline
+```
+
+---
+
+## Quick Start
+
+```bash
+npm install @x402/core @x402/evm @x402/express @x402/fetch express viem dotenv
+npm install -D tsx typescript @types/node @types/express
+# contracts — install BOTH libs:
+forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts
+```
+
+```bash
+cp .env.example .env        # fill AGENT_PK, FACILITATOR_PK, RECEIVER_ADDRESS
+npm run bench               # GuardianRail attack table (offline)
+forge test                  # AgentVault suite (offline)
+forge script script/DeployMockUSDC.s.sol --rpc-url atlantic --broadcast   # → set USDC_ADDRESS in .env
+npm run probe               # prove EIP-3009 settlement on Atlantic
+npm run server &            # x402-protected server (in-process facilitator)
+npm run demo                # guarded agent pays end-to-end → settles 0.001 USDC
+```
+
+## Security → CertiK mapping
+
+| PayGuard control | Attack it stops |
+|---|---|
+| `targetAsset` strict-equality | token-spoofing / look-alike asset phishing |
+| `maxSpendPerCall` + `dailyBudgetRemaining` | wallet draining via runaway/looping agents |
+| `allowedPayees` whitelist | exfiltration to a rogue / attacker-controlled payee |
+| `eth_call` pre-flight simulation | paying into reverts, paused contracts, blacklists |
+| `AgentVault`: `SafeERC20` + `ReentrancyGuard` + CEI | reentrancy / non-standard-token drains |
+| Minimal contract (no streaming/upgrade/delegatecall) | reduced audit surface for the scanner |
+
+## Test evidence (reproducible)
+
+- **GuardianRail**: `npm run bench` → **5/5** attack vectors blocked (deterministic, offline).
+- **AgentVault**: `forge test` → **11/11**, including a 256-run fuzz invariant and a live reentrancy attack:
+
+```text
+Ran 11 tests for test/AgentVault.t.sol:AgentVaultTest
+[PASS] testFuzz_BalanceMatchesTotalLocked(uint256) (runs: 256)
+[PASS] test_LockThenRelease()
+[PASS] test_ReentrancyGuardBlocksReentry()
+[PASS] test_RefundAfterDeadline()
+[PASS] test_RevertWhen_DoubleRelease()
+[PASS] test_RevertWhen_PastDeadline()
+[PASS] test_RevertWhen_RefundBeforeDeadline()
+[PASS] test_RevertWhen_ReleaseAfterDeadline()
+[PASS] test_RevertWhen_ReleaseByNonPayer()
+[PASS] test_RevertWhen_WrongPreimage()
+[PASS] test_RevertWhen_ZeroAmount()
+Suite result: ok. 11 passed; 0 failed; 0 skipped
+```
+
+- **End-to-end**: `npm run server & npm run demo` → a GuardianRail-guarded agent pays the x402 server and the in-process facilitator **settles 0.001 USDC on Atlantic** (receiver balance moves on-chain), returning the protected content.
+
+## Settlement & Hybrid Facilitator (Option 3)
+
+PayGuard defaults to the official Pharos x402 facilitator (`FACILITATOR_URL`) and ships a
+self-hosted fallback (`src/facilitator.ts`, built on `x402Facilitator` + `toFacilitatorEvmSigner`)
+that settles in-process — deterministic demo even if the public facilitator is unavailable.
+
+**Phase 1 deployment proof (Pharos Atlantic, chain 688689):**
+
+| Artifact | Value |
+|---|---|
+| MockUSDC (EIP-3009) | `0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC` |
+| Settlement tx | `0x331ee3ff225c8b8a9725e457d8aa9978240a3504b018aa55fedd16680706ffd2` |
+
+> Verified on-chain — `eth_getTransactionReceipt` → `status: 0x1 (success)`, block 24047421,
+> on Pharos Atlantic (688689) via RPC `https://atlantic.dplabs-internal.com/`.
+
+## Payment Flow (with GuardianRail injected)
+
+```
+1. Agent → GET protected endpoint
+2. Server → 402 + PAYMENT-REQUIRED (accepts: [{ asset, amount, payTo, network }])
+3. GuardianRail → enforce GuardPolicy + eth_call simulation   ◀── before any signature
+      ├─ violation → throw AgentSecurityError (agent never signs)
+      └─ AUTHORIZED → decrement budget, pass the 402 through
+4. x402 client → sign EIP-3009 authorization, re-send with X-PAYMENT
+5. Facilitator → settle transferWithAuthorization (USDC) on Atlantic
+6. Server → 200 + PAYMENT-RESPONSE
+```
+
+## Resources
+
+- x402: https://docs.x402.org · Pharos x402: https://docs.pharos.xyz/developer-guide/x402
+- Reference skill: https://github.com/PharosNetwork/examples/tree/main/skills/x402-pharos
