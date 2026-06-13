@@ -25,9 +25,12 @@ protocol** — two composable, atomic tools any agent imports to make x402 spend
 │ 1       │ 2. The Phish (0xFakeToken)      │ 🛑 BLOCKED      │ INVALID_ASSET       │
 │ 2       │ 3. The Rogue Node (bad payTo)   │ 🛑 BLOCKED      │ UNAPPROVED_PAYEE    │
 │ 3       │ 4. The Revert (sim fails)       │ 🛑 BLOCKED      │ SIMULATION_FAILED   │
-│ 4       │ 5. The Clean Run                │ ✅ AUTHORIZED   │ AUTHORIZED          │
+│ 4       │ 5. The Inflator (negative amt)  │ 🛑 BLOCKED      │ MAX_SPEND           │
+│ 5       │ 6. The Malformed (float amt)    │ 🛑 BLOCKED      │ INVALID_ASSET       │
+│ 6       │ 7. The Clean Run                │ ✅ AUTHORIZED   │ AUTHORIZED          │
 └─────────┴─────────────────────────────────┴─────────────────┴─────────────────────┘
-  ✅ 5/5 vectors handled correctly — 100% of unauthorized agent spends blocked.
+  ✅ TOC/TOU pin — 2-entry offer collapsed to the single validated requirement
+  ✅ 8/8 vectors handled correctly — 100% of unauthorized agent spends blocked.
 ```
 
 ## Pharos Network
@@ -104,7 +107,7 @@ A minimal USDC escrow for milestone/conditional payments — deliberately tiny a
 ```solidity
 function lock(address payee, uint256 amount, bytes32 conditionHash, uint64 deadline)
     external returns (uint256 id);          // pull USDC, hold until released/refunded
-function release(uint256 id, bytes calldata preimage) external; // payer reveals preimage → payee
+function release(uint256 id, bytes calldata preimage) external; // reveal preimage → payee (permissionless; HTLC)
 function refund(uint256 id) external;        // after deadline → back to payer
 ```
 
@@ -149,23 +152,27 @@ npm run demo                # guarded agent pays end-to-end → settles 0.001 US
 
 ## Test evidence (reproducible)
 
-- **GuardianRail**: `npm run bench` → **5/5** attack vectors blocked (deterministic, offline).
-- **AgentVault**: `forge test` → **11/11**, including a 256-run fuzz invariant and a live reentrancy attack:
+- **GuardianRail**: `npm run bench` → **8/8** attack vectors handled (deterministic, offline).
+- **AgentVault + MockUSDC**: `forge test` → **21/21** (AgentVault **15/15** below + MockUSDC **6/6**), including a 256-run fuzz invariant, an EIP-3009 replay fuzz, and a live reentrancy attack:
 
 ```text
-Ran 11 tests for test/AgentVault.t.sol:AgentVaultTest
+Ran 15 tests for test/AgentVault.t.sol:AgentVaultTest
 [PASS] testFuzz_BalanceMatchesTotalLocked(uint256) (runs: 256)
+[PASS] testFuzz_RevertOnSignatureReplay(address,uint256,bytes32,bytes) (runs: 256)
+[PASS] test_AnyoneWithPreimageCanRelease()
+[PASS] test_GuardianPaymentTransfersPayerToPayee()
 [PASS] test_LockThenRelease()
 [PASS] test_ReentrancyGuardBlocksReentry()
 [PASS] test_RefundAfterDeadline()
 [PASS] test_RevertWhen_DoubleRelease()
 [PASS] test_RevertWhen_PastDeadline()
 [PASS] test_RevertWhen_RefundBeforeDeadline()
+[PASS] test_RevertWhen_RefundOnReleased()
 [PASS] test_RevertWhen_ReleaseAfterDeadline()
-[PASS] test_RevertWhen_ReleaseByNonPayer()
+[PASS] test_RevertWhen_ReleaseWithWrongPreimageByThirdParty()
 [PASS] test_RevertWhen_WrongPreimage()
 [PASS] test_RevertWhen_ZeroAmount()
-Suite result: ok. 11 passed; 0 failed; 0 skipped
+Suite result: ok. 15 passed; 0 failed; 0 skipped
 ```
 
 - **End-to-end**: `npm run server & npm run demo` → a GuardianRail-guarded agent pays the x402 server and the in-process facilitator **settles 0.001 USDC on Atlantic** (receiver balance moves on-chain), returning the protected content.
@@ -193,7 +200,7 @@ that settles in-process — deterministic demo even if the public facilitator is
 2. Server → 402 + PAYMENT-REQUIRED (accepts: [{ asset, amount, payTo, network }])
 3. GuardianRail → enforce GuardPolicy + eth_call simulation   ◀── before any signature
       ├─ violation → throw AgentSecurityError (agent never signs)
-      └─ AUTHORIZED → decrement budget, pass the 402 through
+      └─ AUTHORIZED → commit spend, pin the 402 to the validated requirement, pass it through
 4. x402 client → sign EIP-3009 authorization, re-send with X-PAYMENT
 5. Facilitator → settle transferWithAuthorization (USDC) on Atlantic
 6. Server → 200 + PAYMENT-RESPONSE
