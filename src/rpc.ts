@@ -6,7 +6,20 @@
  * HTTP 200 — which viem does NOT auto-retry. This transport catches that (and transient
  * "RPC Request failed") and backs off, so server/facilitator/agent flows survive bursts.
  */
-import { http, type Transport } from 'viem';
+import { http, type Transport, createPublicClient, fallback } from 'viem';
+import { mainnet } from 'viem/chains';
+
+export const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: fallback([
+    http(process.env.PRIMARY_RPC_URL, {
+      retryCount: 5,
+      retryDelay: 1000, // Enables viem's native exponential backoff calculations
+      timeout: 10000,
+    }),
+    http(process.env.FALLBACK_RPC_URL, { retryCount: 3 })
+  ]),
+});
 
 export function retryingHttp(url?: string, opts: { tries?: number; delayMs?: number } = {}): Transport {
   const tries = opts.tries ?? 8;
