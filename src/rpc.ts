@@ -16,8 +16,32 @@ export const publicClient = createPublicClient({
       retryCount: 5,
       retryDelay: 1000, // Enables viem's native exponential backoff calculations
       timeout: 10000,
+      onFetchResponse: (response) => {
+        // Intercept and log primary rate limits/errors for Datadog ingestion
+        if (!response.ok || response.status === 429) {
+          console.warn(JSON.stringify({
+            level: 'WARN',
+            event: 'rpc_degradation_detected',
+            status_code: response.status,
+            message: 'Primary RPC degraded. Viem initiating exponential backoff or fallback.'
+          }));
+        }
+      }
     }),
-    http(process.env.FALLBACK_RPC_URL, { retryCount: 3 })
+    http(process.env.FALLBACK_RPC_URL, { 
+      retryCount: 3,
+      onFetchResponse: (response) => {
+        // Log if the fallback RPC is also failing
+        if (!response.ok || response.status === 429) {
+          console.error(JSON.stringify({
+            level: 'ERROR',
+            event: 'fallback_rpc_degradation',
+            status_code: response.status,
+            message: 'Fallback RPC degraded. Critical infrastructure failing.'
+          }));
+        }
+      }
+    })
   ]),
 });
 
