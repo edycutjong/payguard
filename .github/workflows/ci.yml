@@ -14,6 +14,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Dependencies
+        # lib/ is git-ignored (no submodules), so deps must be fetched on the runner.
+        # Pinned to the versions verified locally to keep build + gas snapshot reproducible.
+        run: forge install OpenZeppelin/openzeppelin-contracts@v5.6.1 foundry-rs/forge-std@v1.16.1
       - name: Build Contracts
         run: forge build --sizes
       - name: Run Tests & Fuzzing
