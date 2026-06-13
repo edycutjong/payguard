@@ -10,11 +10,13 @@
     "probe": "tsx src/probe.ts",
     "server": "tsx src/server.ts",
     "demo": "tsx src/demo.ts",
+    "agent": "tsx src/agent.ts",
     "bench": "tsx bench/malicious_bench.ts",
     "test": "forge test",
     "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
     "@x402/core": "^2.14.0",
     "@x402/evm": "^2.14.0",
     "@x402/express": "^2.14.0",

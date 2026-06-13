@@ -139,6 +139,15 @@ npm run server &            # x402-protected server (in-process facilitator)
 npm run demo                # guarded agent pays end-to-end → settles 0.001 USDC
 ```
 
+## Skill-to-Agent demo
+
+`npm run agent` runs an autonomous agent on a GuardianRail-guarded wallet: given a budget and a goal, it
+shops an x402 data marketplace with **every purchase gated by `createGuardedFetch` before any signature.**
+Set `ANTHROPIC_API_KEY` for a live Claude (`claude-opus-4-8`) tool-use loop; with no key it runs a
+deterministic planner (offline). GuardianRail blocks the drain, token-spoof, rogue-payee, sim-revert, and
+over-budget buys; the agent adapts and finishes within budget — the real, shipped guard protecting a real
+agent loop.
+
 ## Security → CertiK mapping
 
 | PayGuard control | Attack it stops |

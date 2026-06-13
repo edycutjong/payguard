@@ -29,6 +29,7 @@
 ```bash
 npm install && npm run bench                                         # → 8/8 attacks blocked
 forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test   # → 21/21 + fuzz + reentrancy
+npm run agent                                                        # → autonomous agent; GuardianRail blocks 5/5 unsafe buys (offline, no key)
 ```
 
 Want the live on-chain settlement too? It's a real testnet tx you can verify without running anything —
@@ -69,6 +70,29 @@ npm run demo                  # terminal 2 — guarded agent pays end-to-end (se
 ```
 
 ---
+
+## 🤖 Skill-to-Agent — the guard protecting a live agent
+
+`npm run agent` turns GuardianRail loose on an autonomous agent. A procurement agent is given a budget and a
+goal (*"assemble a trading-research data bundle"*) and shops an x402 data marketplace — **every purchase gated
+by the shipped `createGuardedFetch` before any signature.** Set `ANTHROPIC_API_KEY` for a live **Claude
+(`claude-opus-4-8`)** tool-use loop; with no key it runs a deterministic planner (offline, identical every run):
+
+```text
+🤖 autonomous agent · goal: assemble a safe research bundle under 5 USDC/day
+   ✅ DataHub       AUTHORIZED — charged 0.5 USDC
+   🛑 AlphaDrainer  BLOCKED [MAX_SPEND]          10,000 USDC > 5 USDC per-call cap
+   ✅ WeatherWire   AUTHORIZED — charged 2 USDC
+   🛑 CheapFeed     BLOCKED [INVALID_ASSET]      spoofed token, not USDC
+   🛑 GhostNode     BLOCKED [UNAPPROVED_PAYEE]   payee not in allowlist
+   🛑 PausedOracle  BLOCKED [SIMULATION_FAILED]  eth_call would revert
+   🛑 NewsFeed      BLOCKED [BUDGET_EXCEEDED]    3 USDC > 2.5 USDC left today
+  💰 spent 2.5 / 5 USDC · 5 unsafe payments blocked — every drain, spoof, rogue-payee,
+     revert, and over-budget attempt stopped BEFORE the agent ever signs.
+```
+
+It reuses the **shipped** guard unchanged — the real GuardianRail protecting a real agent loop, not a
+reimplementation. The EIP-3009 authorization for a blocked buy is never created.
 
 ## 💡 The problem & solution
 
@@ -195,6 +219,7 @@ src/rpc.ts                   rate-limit-hardened viem transport (retryingHttp)
 src/facilitator.ts           in-process x402Facilitator (self-hosted fallback)
 src/server.ts                x402-protected resource server
 src/demo.ts                  end-to-end guarded payment
+src/agent.ts                 Skill-to-Agent — autonomous Claude agent on the guard
 src/probe.ts                 EIP-3009 settlement probe
 contracts/AgentVault.sol     Tool 2 — conditional escrow (100% coverage)
 contracts/MockUSDC.sol       EIP-3009 test USDC (100% coverage)
