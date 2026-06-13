@@ -87,7 +87,7 @@ jobs:
       - name: Install libraries
         run: forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts
       - name: Slither static analysis
-        uses: crytic/slither-action@v0.4.0
+        uses: crytic/slither-action@v0.4.2
         with:
           target: "."
           slither-args: "--exclude-dependencies"
