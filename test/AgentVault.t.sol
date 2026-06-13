@@ -82,6 +82,13 @@ contract AgentVaultTest is Test {
         vault.release(id, preimage);
     }
 
+    function test_RevertWhen_RefundOnReleased() public {
+        uint256 id = _lock(100e6);
+        vault.release(id, preimage);
+        vm.expectRevert(AgentVault.WrongStatus.selector);
+        vault.refund(id);
+    }
+
     function test_RevertWhen_ZeroAmount() public {
         vm.expectRevert(AgentVault.ZeroAmount.selector);
         vault.lock(payee, 0, condition, deadline);

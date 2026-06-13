@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 640" fill="none" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="h-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="55%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <radialGradient id="h-core" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="42%" stop-color="#a5f3fc"/><stop offset="100%" stop-color="#06B6D4"/>
+    </radialGradient>
+    <linearGradient id="h-rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="h-bg1" cx="20%" cy="16%" r="55%"><stop offset="0%" stop-color="#06B6D4" stop-opacity="0.22"/><stop offset="100%" stop-color="#06B6D4" stop-opacity="0"/></radialGradient>
+    <radialGradient id="h-bg2" cx="84%" cy="88%" r="60%"><stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.22"/><stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <style>@font-face{font-family:'Orbitron';font-style:normal;font-weight:800;src:url(data:font/woff2;base64,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) format('woff2');}</style>
+    <linearGradient id="h-line" x1="920" y1="138" x2="920" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE"/><stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="h-soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="h-glow" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="10"/></filter>
+    <path id="h-shield" d="M120 96 H392 C408 96 420 108 420 124 V268 C420 360 344 424 256 452 C168 424 92 360 92 268 V124 C92 108 104 96 120 96 Z"/>
+    <clipPath id="h-shclip"><use xlink:href="#h-shield"/></clipPath>
+    <clipPath id="h-titleclip"><text x="150" y="118" font-family="'Orbitron', ui-sans-serif, sans-serif" font-size="46" font-weight="800">PayGuard</text></clipPath>
+  </defs>
+
+  <rect width="1280" height="640" fill="#020617"/>
+  <rect width="1280" height="640" fill="url(#h-bg1)"/>
+  <rect width="1280" height="640" fill="url(#h-bg2)"/>
+  <line x1="556" y1="58" x2="556" y2="582" stroke="#ffffff" stroke-opacity="0.08"/>
+
+  <!-- animated shield mark -->
+  <g transform="translate(48,52) scale(0.156)">
+    <use xlink:href="#h-shield" fill="url(#h-grad)" filter="url(#h-soft)" opacity="0.6"/>
+    <use xlink:href="#h-shield" fill="url(#h-grad)"/>
+    <g clip-path="url(#h-shclip)">
+      <path d="M88 92 L256 92 L256 462 L88 268 Z" fill="#ffffff" opacity="0.13"/>
+      <path d="M256 92 L426 92 L426 270 L256 462 Z" fill="#04122b" opacity="0.30"/>
+      <path d="M251 100 L261 100 L256 452 Z" fill="#ffffff" opacity="0.55"/>
+      <rect x="78" y="90" width="356" height="120" fill="url(#h-rim)"/>
+    </g>
+    <use xlink:href="#h-shield" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="3"/>
+    <g transform="translate(256 250)">
+      <circle r="48" fill="#22d3ee" filter="url(#h-glow)"><animate attributeName="opacity" values="0.5;1;0.5" dur="2.6s" repeatCount="indefinite"/></circle>
+      <circle r="66" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2.5" stroke-dasharray="10 14" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="14s" repeatCount="indefinite"/></circle>
+      <g><circle cx="0" cy="-66" r="5" fill="#fff"/><circle cx="57" cy="33" r="4.5" fill="#fff" opacity="0.85"/><circle cx="-57" cy="33" r="4.5" fill="#fff" opacity="0.85"/><animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="9s" repeatCount="indefinite"/></g>
+      <g>
+        <path d="M0 -46 L40 -23 L40 23 L0 46 L-40 23 L-40 -23 Z" fill="url(#h-core)"/>
+        <path d="M0 -46 L40 -23 L0 2 L-40 -23 Z" fill="#fff" opacity="0.34"/>
+        <path d="M0 -46 L40 -23 L40 23 L0 46 L-40 23 L-40 -23 Z" fill="none" stroke="#fff" stroke-opacity="0.9" stroke-width="3"/>
+        <animateTransform attributeName="transform" type="scale" values="1;1.07;1" keyTimes="0;0.5;1" dur="2.6s" repeatCount="indefinite"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- title + shimmer -->
+  <text x="150" y="118" font-family="'Orbitron', ui-sans-serif, sans-serif" font-size="46" font-weight="800" fill="url(#h-grad)">PayGuard</text>
+  <g clip-path="url(#h-titleclip)">
+    <rect x="100" y="74" width="64" height="64" fill="#ffffff">
+      <animate attributeName="x" values="100;440;440" keyTimes="0;0.55;1" dur="3.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0.45;0;0" keyTimes="0;0.28;0.55;1" dur="3.6s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <text x="52" y="172" font-size="21" fill="#94A3B8">The CertiK-grade seatbelt for x402 —</text>
+  <text x="52" y="200" font-size="21" fill="#94A3B8">safe, guarded agent payments on Pharos.</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" fill="#F8FAFC">
+    <text x="52" y="262"><tspan fill="#22D3EE" font-weight="700">✓ </tspan>Spend caps + eth_call pre-flight sim</text>
+    <text x="52" y="298"><tspan fill="#22D3EE" font-weight="700">✓ </tspan>Asset-spoof block + payee allowlist</text>
+    <text x="52" y="334"><tspan fill="#22D3EE" font-weight="700">✓ </tspan>Conditional USDC escrow · SafeERC20 + CEI</text>
+    <text x="52" y="370"><tspan fill="#22D3EE" font-weight="700">✓ </tspan>Settles on Pharos via x402 · EIP-3009</text>
+    <text x="52" y="406"><tspan fill="#22D3EE" font-weight="700">✓ </tspan>5/5 attacks blocked · 12/12 tests · 100% cov</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" fill="#94A3B8">
+    <rect x="52" y="470" width="58" height="26" rx="13" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.1"/><text x="81" y="487" text-anchor="middle">x402</text>
+    <rect x="118" y="470" width="74" height="26" rx="13" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.1"/><text x="155" y="487" text-anchor="middle">Pharos</text>
+    <rect x="200" y="470" width="56" height="26" rx="13" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.1"/><text x="228" y="487" text-anchor="middle">viem</text>
+    <rect x="264" y="470" width="80" height="26" rx="13" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.1"/><text x="304" y="487" text-anchor="middle">Solidity</text>
+    <text x="52" y="524" fill="#475569">MIT · Built for the Pharos Skill Hackathon</text>
+  </g>
+
+  <!-- diagram scan sweep -->
+  <rect x="700" y="70" width="440" height="3" fill="#a5f3fc">
+    <animate attributeName="y" values="72;476;476" keyTimes="0;0.7;1" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0.5;0.5;0;0" keyTimes="0;0.12;0.7;0.78;1" dur="4s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- focal glows -->
+  <rect x="730" y="190" width="380" height="64" rx="16" fill="#06B6D4" filter="url(#h-glow)" opacity="0.22"><animate attributeName="opacity" values="0.14;0.4;0.14" dur="3s" repeatCount="indefinite"/></rect>
+  <rect x="730" y="418" width="380" height="64" rx="16" fill="#8B5CF6" filter="url(#h-glow)" opacity="0.2"><animate attributeName="opacity" values="0.12;0.34;0.12" dur="3.4s" repeatCount="indefinite"/></rect>
+
+  <!-- connectors + flowing dots -->
+  <g stroke="url(#h-line)" stroke-width="2.5">
+    <line x1="920" y1="140" x2="920" y2="186"/><line x1="920" y1="254" x2="920" y2="300"/><line x1="920" y1="368" x2="920" y2="414"/>
+  </g>
+  <g fill="#8B5CF6"><path d="M914 180 L926 180 L920 190 Z"/><path d="M914 294 L926 294 L920 304 Z"/><path d="M914 408 L926 408 L920 418 Z"/></g>
+  <g fill="#a5f3fc">
+    <circle cx="920" cy="140" r="4"><animate attributeName="cy" values="140;186" dur="1.5s" begin="0s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.85;1" dur="1.5s" begin="0s" repeatCount="indefinite"/></circle>
+    <circle cx="920" cy="254" r="4"><animate attributeName="cy" values="254;300" dur="1.5s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.85;1" dur="1.5s" begin="0.5s" repeatCount="indefinite"/></circle>
+    <circle cx="920" cy="368" r="4"><animate attributeName="cy" values="368;414" dur="1.5s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.85;1" dur="1.5s" begin="1s" repeatCount="indefinite"/></circle>
+  </g>
+  <text x="936" y="282" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#86efac">✅ authorized</text>
+
+  <!-- nodes -->
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <!-- Agent -->
+    <rect x="730" y="76" width="380" height="64" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.12"/>
+    <text x="754" y="116" font-size="26">🤖</text>
+    <text x="800" y="104" font-size="16" font-weight="700" fill="#F8FAFC">Agent</text>
+    <text x="800" y="124" font-family="ui-monospace, monospace" font-size="12" fill="#94A3B8">x402 request</text>
+    <!-- GuardianRail -->
+    <rect x="730" y="190" width="380" height="64" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#22D3EE" stroke-opacity="0.5"/>
+    <text x="754" y="230" font-size="26">🛡️</text>
+    <text x="800" y="218" font-size="16" font-weight="700" fill="#F8FAFC">GuardianRail</text>
+    <text x="800" y="238" font-family="ui-monospace, monospace" font-size="12" fill="#94A3B8">budget · asset · payee · eth_call sim</text>
+    <rect x="1016" y="178" width="118" height="24" rx="12" fill="#EF4444" fill-opacity="0.12" stroke="#EF4444" stroke-opacity="0.45"/>
+    <text x="1075" y="194" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#fda4af">🛑 blocks unsafe</text>
+    <!-- x402 settle -->
+    <rect x="730" y="304" width="380" height="64" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.12"/>
+    <text x="754" y="344" font-size="26">⚡</text>
+    <text x="800" y="332" font-size="16" font-weight="700" fill="#F8FAFC">x402 settle</text>
+    <text x="800" y="352" font-family="ui-monospace, monospace" font-size="12" fill="#94A3B8">EIP-3009 transferWithAuthorization</text>
+    <!-- Pharos -->
+    <rect x="730" y="418" width="380" height="64" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#8B5CF6" stroke-opacity="0.5"/>
+    <text x="754" y="458" font-size="26">🌐</text>
+    <text x="800" y="446" font-size="16" font-weight="700" fill="#F8FAFC">Pharos Atlantic</text>
+    <text x="800" y="466" font-family="ui-monospace, monospace" font-size="12" fill="#86efac">0.001 USDC settled on-chain ✓</text>
+  </g>
+</svg>

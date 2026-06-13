@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="ag-grad" x1="110" y1="84" x2="404" y2="452" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="var(--primary, #06B6D4)"/>
+      <stop offset="52%" stop-color="var(--primary, #22D3EE)" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="var(--accent, #8B5CF6)"/>
+    </linearGradient>
+    <linearGradient id="ag-rim" x1="256" y1="92" x2="256" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="ag-core" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="42%" stop-color="#a5f3fc"/>
+      <stop offset="100%" stop-color="var(--primary, #06B6D4)"/>
+    </radialGradient>
+    <linearGradient id="ag-scan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a5f3fc" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#a5f3fc" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#a5f3fc" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="ag-soft" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="11"/></filter>
+    <filter id="ag-blur" x="-120%" y="-120%" width="340%" height="340%"><feGaussianBlur stdDeviation="16"/></filter>
+    <path id="ag-shield" d="M120 96 H392 C408 96 420 108 420 124 V268 C420 360 344 424 256 452 C168 424 92 360 92 268 V124 C92 108 104 96 120 96 Z"/>
+    <clipPath id="ag-clip"><use xlink:href="#ag-shield"/></clipPath>
+  </defs>
+
+  <!-- outer brand glow + shield base -->
+  <use xlink:href="#ag-shield" fill="url(#ag-grad)" filter="url(#ag-soft)" opacity="0.6"/>
+  <use xlink:href="#ag-shield" fill="url(#ag-grad)"/>
+
+  <!-- 3D faceting (static) + scan sweep -->
+  <g clip-path="url(#ag-clip)">
+    <path d="M88 92 L256 92 L256 462 L88 268 Z" fill="#ffffff" opacity="0.13"/>
+    <path d="M256 92 L426 92 L426 270 L256 462 Z" fill="#04122b" opacity="0.30"/>
+    <path d="M88 302 L256 462 L424 302 L256 366 Z" fill="#04122b" opacity="0.22"/>
+    <path d="M251 100 L261 100 L256 452 Z" fill="#ffffff" opacity="0.55"/>
+    <rect x="78" y="90" width="356" height="128" fill="url(#ag-rim)"/>
+    <rect x="78" y="104" width="356" height="40" fill="url(#ag-scan)" opacity="0" style="mix-blend-mode:screen">
+      <animate attributeName="opacity" values="0;0.95;0.95;0;0" keyTimes="0;0.14;0.55;0.66;1" dur="3.4s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="0 -26;0 300;0 300" keyTimes="0;0.55;1" dur="3.4s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <!-- shield hairline -->
+  <use xlink:href="#ag-shield" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="3"/>
+
+  <!-- animated core system (drawn around 0,0, translated to icon centre) -->
+  <g transform="translate(256 250)">
+    <!-- breathing glow -->
+    <circle cx="0" cy="0" r="48" fill="#22d3ee" filter="url(#ag-blur)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2.6s" repeatCount="indefinite"/>
+    </circle>
+    <!-- radar ring -->
+    <circle cx="0" cy="0" r="66" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2.5" stroke-dasharray="10 14" stroke-linecap="round">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="14s" repeatCount="indefinite"/>
+    </circle>
+    <!-- orbit nodes -->
+    <g>
+      <circle cx="0" cy="-66" r="5" fill="#ffffff"/>
+      <circle cx="57" cy="33" r="4.5" fill="#ffffff" opacity="0.85"/>
+      <circle cx="-57" cy="33" r="4.5" fill="#ffffff" opacity="0.85"/>
+      <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="9s" repeatCount="indefinite"/>
+    </g>
+    <!-- hexagonal guarded core -->
+    <g>
+      <path d="M0 -46 L40 -23 L40 23 L0 46 L-40 23 L-40 -23 Z" fill="url(#ag-core)"/>
+      <path d="M0 -46 L40 -23 L0 2 L-40 -23 Z" fill="#ffffff" opacity="0.34"/>
+      <path d="M0 -46 L40 -23 L40 23 L0 46 L-40 23 L-40 -23 Z" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="3"/>
+      <animateTransform attributeName="transform" type="scale" values="1;1.07;1" keyTimes="0;0.5;1" dur="2.6s" repeatCount="indefinite"/>
+    </g>
+  </g>
+</svg>
