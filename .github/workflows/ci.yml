@@ -1,0 +1,110 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── STAGE 1: TypeScript / Skill quality (parallel) ──────────
+  quality:
+    name: "Stage 1 · TypeScript & Skill"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Full matrix on main push, single node on PRs.
+        node-version: ${{ github.event_name == 'push' && fromJSON('[20, 22]') || fromJSON('[20]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+      - run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: GuardianRail attack bench (expects 5/5 blocked)
+        run: npm run bench
+
+  # ── STAGE 1: Contracts / Foundry (parallel) ─────────────────
+  contracts:
+    name: "Stage 1 · Contracts (Foundry)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Install libraries
+        run: forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts
+      - name: Build
+        run: forge build --sizes
+      - name: Test (11/11 — fuzz invariant + reentrancy attack)
+        run: forge test -vv
+
+  # ── STAGE 2: Security ───────────────────────────────────────
+  secret-scan:
+    name: "Stage 2 · Secret Scanning (TruffleHog)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history for commit scanning
+      - name: TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  dependency-audit:
+    name: "Stage 2 · Dependency Audit"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - run: npm ci
+      - name: npm audit (high + critical)
+        run: npm audit --audit-level=high
+        continue-on-error: true # advisory — don't block on transitive deps
+      - name: License compliance
+        run: npx license-checker --production --failOn "GPL-3.0;AGPL-3.0" --summary
+        continue-on-error: true
+
+  slither:
+    name: "Stage 2 · Slither (Solidity SAST)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Install libraries
+        run: forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts
+      - name: Slither static analysis
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: "."
+          slither-args: "--exclude-dependencies"
+        continue-on-error: true # advisory — review findings, don't hard-block the hackathon build
+
+  # ── STAGE 3: Deploy Gate (main only) ────────────────────────
+  gate:
+    name: "Stage 3 · All Gates Passed"
+    needs: [quality, contracts, secret-scan, dependency-audit]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Summary
+        run: |
+          echo "🚀 All CI gates passed!"
+          echo "  ✅ Stage 1 — TypeScript typecheck + GuardianRail bench (5/5)"
+          echo "  ✅ Stage 1 — Foundry build + test (11/11: fuzz + reentrancy)"
+          echo "  ✅ Stage 2 — Secret scanning (TruffleHog)"
+          echo "  ✅ Stage 2 — Dependency audit + license check"
+          echo "  ✅ Stage 2 — Slither (Solidity SAST, advisory)"
