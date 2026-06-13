@@ -122,12 +122,35 @@ contract AgentVaultTest is Test {
         vm.expectRevert(); // ReentrancyGuard: reentrant call reverts the whole release
         v2.release(id, preimage);
     }
+
+    function testFuzz_RevertOnSignatureReplay(
+        address payee, 
+        uint256 amount, 
+        bytes32 nonce, 
+        bytes memory signature
+    ) public {
+        uint256 validAfter = block.timestamp;
+        uint256 validBefore = block.timestamp + 1 hours;
+
+        // 1. Initial execution succeeds
+        vault.executeGuardianPayment(payee, amount, validAfter, validBefore, nonce, signature);
+        
+        // 2. Replay MUST fail and catch the exact custom error
+        vm.expectRevert(abi.encodeWithSelector(AgentVault.NonceAlreadyConsumed.selector, nonce));
+        vault.executeGuardianPayment(payee, amount, validAfter, validBefore, nonce, signature);
+    }
 }
 
 contract MintableERC20 is ERC20 {
     constructor() ERC20("Mock USD Coin", "mUSDC") {}
     function mint(address to, uint256 amount) external { _mint(to, amount); }
     function decimals() public pure override returns (uint8) { return 6; }
+    
+    function receiveWithAuthorization(
+        address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, bytes calldata signature
+    ) external {
+        // dummy for testing
+    }
 }
 
 /// Re-enters AgentVault.release() on its outbound transfer — must be blocked by ReentrancyGuard.
