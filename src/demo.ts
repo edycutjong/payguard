@@ -42,12 +42,12 @@ const guarded = createGuardedFetch(fetch, policy, { rpcUrl: RPC_URL });
 const safeFetch = wrapFetchWithPayment(guarded as typeof fetch, client);
 
 async function main() {
-  console.log(`🤖 agent ${account.address} → ${SERVER_URL}/api/data  (budget ${policy.dailyBudgetRemaining})`);
+  console.log(`🤖 agent ${account.address} → ${SERVER_URL}/api/data  (daily cap ${policy.dailyBudgetRemaining}, per-call max ${policy.maxSpendPerCall})`);
   try {
     const res = await safeFetch(`${SERVER_URL}/api/data`);
     const body = await res.json();
     console.log('✅ paid + received:', body);
-    console.log(`💰 budget remaining: ${policy.dailyBudgetRemaining}`);
+    console.log(`💰 enforced under daily cap ${policy.dailyBudgetRemaining} / per-call max ${policy.maxSpendPerCall}`);
   } catch (e) {
     if (e instanceof AgentSecurityError) console.error(`🛑 GuardianRail BLOCKED [${e.code}]: ${e.message}`);
     else console.error('❌ request failed:', (e as any)?.shortMessage ?? (e as any)?.message ?? e);

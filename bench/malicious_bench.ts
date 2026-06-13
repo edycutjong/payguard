@@ -46,7 +46,9 @@ const cases: Case[] = [
   { attack: '2. The Phish (0xFakeToken)',    req: { asset: FAKE },                  expect: 'INVALID_ASSET' },
   { attack: '3. The Rogue Node (bad payTo)', req: { payTo: UNKNOWN },              expect: 'UNAPPROVED_PAYEE' },
   { attack: '4. The Revert (sim fails)',     req: { extra: { __revert: true } },   expect: 'SIMULATION_FAILED' },
-  { attack: '5. The Clean Run',              req: {},                               expect: 'AUTHORIZED' },
+  { attack: '5. The Inflator (negative amt)', req: { amount: '-5000' },            expect: 'MAX_SPEND' },
+  { attack: '6. The Malformed (float amt)',  req: { amount: '1.5' },               expect: 'INVALID_ASSET' },
+  { attack: '7. The Clean Run',              req: {},                               expect: 'AUTHORIZED' },
 ];
 
 const rows: Record<string, string>[] = [];
@@ -69,6 +71,26 @@ for (const c of cases) {
 
 console.log('\n  🛡️  PayGuard · GuardianRail — Attack → Blocked\n');
 console.table(rows);
-console.log(`\n  ${failures === 0 ? '✅' : '❌'} ${cases.length - failures}/${cases.length} vectors handled correctly` +
+
+// TOC/TOU array-spoof proof: a 2-entry offer (cheap + costly) must be pinned to ONLY the
+// validated cheap entry, so the wrapped x402 client can never sign the expensive sibling.
+const mk = (amount: string): PaymentRequirements => ({
+  scheme: 'exact', network: 'eip155:688689', asset: USDC, amount,
+  payTo: WHITELISTED, maxTimeoutSeconds: 60, extra: {},
+} as unknown as PaymentRequirements);
+const spoof = (async () => new Response(
+  JSON.stringify({ x402Version: 1, accepts: [mk('1'), mk('1000000000')] }),
+  { status: 402, headers: { 'content-type': 'application/json' } },
+)) as unknown as typeof fetch;
+
+const pinnedRes = await createGuardedFetch(spoof, basePolicy(), { simulator: mockSim })('https://api.example/paid');
+const pinned: any = await pinnedRes.json();
+const amounts = Array.isArray(pinned?.accepts) ? pinned.accepts.map((a: any) => a.amount) : [];
+const pinnedOk = amounts.length === 1 && amounts[0] === '1';
+if (!pinnedOk) failures++;
+console.log(`\n  ${pinnedOk ? '✅' : '❌'} TOC/TOU pin — 2-entry offer [1, 1000000000] collapsed to validated [${amounts.join(', ')}]`);
+
+const total = cases.length + 1;
+console.log(`\n  ${failures === 0 ? '✅' : '❌'} ${total - failures}/${total} vectors handled correctly` +
             (failures === 0 ? ' — 100% of unauthorized agent spends blocked.\n' : `  (${failures} FAILED)\n`));
 process.exit(failures === 0 ? 0 : 1);

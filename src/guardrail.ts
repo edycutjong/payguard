@@ -42,9 +42,30 @@ export class AgentSecurityError extends Error {
   }
 }
 
-const eq = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+const eq = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+
+/**
+ * Coerce the offered amount to a strictly-positive bigint, or throw.
+ * A hostile server can omit the field, send a float ("1.5") or junk string, or — the
+ * dangerous one — a NEGATIVE value: `budgetRemaining -= (-x)` would *inflate* the budget
+ * and sail past maxSpendPerCall. Anything that is not a positive integer is rejected here
+ * rather than crashing the caller with a raw BigInt SyntaxError/TypeError.
+ */
 function amountOf(req: PaymentRequirements): bigint {
-  return BigInt((req as any).amount ?? (req as any).maxAmountRequired);
+  const raw = (req as any).amount ?? (req as any).maxAmountRequired;
+  if (raw === undefined || raw === null || raw === '')
+    throw new AgentSecurityError('INVALID_ASSET', 'missing payment amount');
+  if (typeof raw === 'number' && !Number.isSafeInteger(raw))
+    throw new AgentSecurityError('MAX_SPEND', `amount ${raw} exceeds safe integer precision`);
+  let amt: bigint;
+  try {
+    amt = BigInt(raw); // throws on floats and non-numeric strings
+  } catch {
+    throw new AgentSecurityError('INVALID_ASSET', `malformed amount ${String(raw)}`);
+  }
+  if (amt <= 0n)
+    throw new AgentSecurityError('MAX_SPEND', `amount ${amt} must be strictly positive`);
+  return amt;
 }
 
 /** PURE policy evaluation — the heart of the skill (see bench/malicious_bench.ts). */
@@ -73,20 +94,30 @@ export function evaluateRequirement(
   return mk('AUTHORIZED', 'approved');
 }
 
-async function decodePaymentRequired(res: Response): Promise<PaymentRequirements[]> {
-  try {
-    const body: any = await res.clone().json();
-    if (body?.accepts?.length) return body.accepts as PaymentRequirements[];
-  } catch { /* not JSON — try header */ }
+interface PaymentOffer { version: number; accepts: PaymentRequirements[]; }
+
+/**
+ * Read the 402 offer the way the x402 client does: PAYMENT-REQUIRED header first, then a
+ * v1 JSON body. The base64 header is capped at 8KB so a hostile server can't hand us a
+ * multi-megabyte blob to base64-decode + JSON-parse synchronously and stall the event loop.
+ * `version` is preserved so the re-pinned offer round-trips through the client's schema.
+ */
+async function decodePaymentRequired(res: Response): Promise<PaymentOffer> {
   const hdr = res.headers.get('payment-required') ?? res.headers.get('x-payment-required');
   if (hdr) {
+    if (hdr.length > 8192)
+      throw new AgentSecurityError('SIMULATION_FAILED', `payment-required header ${hdr.length}B exceeds 8KB cap`);
     try {
-      const json = JSON.parse(Buffer.from(hdr, 'base64').toString('utf8'));
-      if (json?.accepts?.length) return json.accepts as PaymentRequirements[];
-      if (Array.isArray(json)) return json as PaymentRequirements[];
-    } catch { /* ignore */ }
+      const obj: any = JSON.parse(Buffer.from(hdr, 'base64').toString('utf8'));
+      if (Array.isArray(obj) && obj.length) return { version: 1, accepts: obj as PaymentRequirements[] };
+      if (obj?.accepts?.length) return { version: obj.x402Version ?? 2, accepts: obj.accepts as PaymentRequirements[] };
+    } catch { /* not a base64-JSON header — fall through to the body */ }
   }
-  return [];
+  try {
+    const body: any = await res.clone().json();
+    if (body?.accepts?.length) return { version: body.x402Version ?? 1, accepts: body.accepts as PaymentRequirements[] };
+  } catch { /* not JSON */ }
+  return { version: 1, accepts: [] };
 }
 
 export interface GuardedFetchOptions {
@@ -105,6 +136,11 @@ export function createGuardedFetch(
   policy: GuardPolicy,
   opts: GuardedFetchOptions = {},
 ) {
+  // Session spend lives in this closure, never on the shared `policy` object: two guarded
+  // fetches built from the same policy can't bleed budget into each other, and offline
+  // suites stay deterministic instead of accumulating state across cases.
+  let sessionSpent = 0n;
+
   const simulate =
     opts.simulator ??
     (opts.rpcUrl ? makeSimulator(opts.rpcUrl, policy.agentAddress) : undefined);
@@ -116,8 +152,8 @@ export function createGuardedFetch(
     const alreadyPaying = new Headers(init?.headers as any).has('x-payment');
     if (res.status !== 402 || alreadyPaying) return res;
 
-    const offered = await decodePaymentRequired(res);
-    const req = offered[0];
+    const { version, accepts } = await decodePaymentRequired(res);
+    const req = accepts[0];
     if (!req) throw new AgentSecurityError('INVALID_ASSET', 'server offered no payment requirements');
 
     let sim: SimResult | undefined;
@@ -126,11 +162,25 @@ export function createGuardedFetch(
       sim = await simulate(req);
     }
 
-    const decision = evaluateRequirement(req, policy, sim);
+    const remaining = policy.dailyBudgetRemaining - sessionSpent;
+    const decision = evaluateRequirement(req, { ...policy, dailyBudgetRemaining: remaining }, sim);
     if (!decision.allowed) throw new AgentSecurityError(decision.code, decision.reason);
 
-    policy.dailyBudgetRemaining -= decision.amount; // commit the authorized spend
-    return res; // hand the 402 back so the x402 client signs + settles
+    sessionSpent += decision.amount; // commit the authorized spend to the session counter
+
+    // Pin the offer to ONLY the requirement we validated, then hand it back. The x402
+    // client reads PAYMENT-REQUIRED (header first, then a v1 body) and selects an entry
+    // from `accepts[]` to sign — so returning the original multi-entry array would let a
+    // server get a $1 entry approved while the client signs a $1M sibling (TOC/TOU). We
+    // re-encode a single-entry offer in the header (the client's first-choice source) so
+    // it can only sign what passed policy.
+    const pinned = JSON.stringify({ x402Version: version, accepts: [req] });
+    const headers = new Headers(res.headers);
+    headers.set('payment-required', Buffer.from(pinned).toString('base64'));
+    headers.delete('x-payment-required');
+    headers.delete('content-length'); // let Response recompute it for the rewritten body
+    headers.set('content-type', 'application/json');
+    return new Response(pinned, { status: res.status, statusText: res.statusText, headers });
   };
 }
 

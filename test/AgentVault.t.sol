@@ -55,11 +55,23 @@ contract AgentVaultTest is Test {
         vault.release(id, bytes("wrong-secret"));
     }
 
-    function test_RevertWhen_ReleaseByNonPayer() public {
+    // Release is permissionless-with-preimage (HTLC): a third party revealing the
+    // correct secret settles the escrow to the payee — the payer cannot withhold it.
+    function test_AnyoneWithPreimageCanRelease() public {
+        uint256 id = _lock(100e6);
+        vm.prank(makeAddr("settler")); // not the payer
+        vault.release(id, preimage);
+        assertEq(usdc.balanceOf(payee), 100e6); // funds always route to the payee
+        assertEq(vault.totalLocked(), 0);
+        (, , , , , AgentVault.Status status) = vault.escrows(id);
+        assertEq(uint8(status), uint8(AgentVault.Status.Released));
+    }
+
+    function test_RevertWhen_ReleaseWithWrongPreimageByThirdParty() public {
         uint256 id = _lock(100e6);
         vm.prank(makeAddr("intruder"));
-        vm.expectRevert(AgentVault.NotPayer.selector);
-        vault.release(id, preimage);
+        vm.expectRevert(AgentVault.BadPreimage.selector); // no secret, no settlement
+        vault.release(id, bytes("guess"));
     }
 
     function test_RevertWhen_ReleaseAfterDeadline() public {
@@ -123,33 +135,57 @@ contract AgentVaultTest is Test {
         v2.release(id, preimage);
     }
 
+    // Guardian payments route straight from payer to payee via EIP-3009 — the funds
+    // must never be stranded inside the vault (the original "black hole" bug).
+    function test_GuardianPaymentTransfersPayerToPayee() public {
+        address rcv = makeAddr("guardianPayee");
+        uint256 amt = 100e6;
+        vault.executeGuardianPayment(
+            payer, rcv, amt, 0, block.timestamp + 1 hours, keccak256("g-nonce"), bytes("sig")
+        );
+        assertEq(usdc.balanceOf(rcv), amt);          // payee paid
+        assertEq(usdc.balanceOf(address(vault)), 0); // nothing trapped in the vault
+    }
+
+    // Replay protection now lives in the token (USDC consumes the nonce per `from`),
+    // not in a redundant vault-side mapping. A second use of the same nonce reverts.
     function testFuzz_RevertOnSignatureReplay(
-        address payee, 
-        uint256 amount, 
-        bytes32 nonce, 
+        address payeeAddr,
+        uint256 amount,
+        bytes32 nonce,
         bytes memory signature
     ) public {
-        uint256 validAfter = block.timestamp;
+        amount = bound(amount, 1, 1_000_000e6); // within the payer's minted balance
+        vm.assume(payeeAddr != address(0));
+        uint256 validAfter = 0;
         uint256 validBefore = block.timestamp + 1 hours;
 
-        // 1. Initial execution succeeds
-        vault.executeGuardianPayment(payee, amount, validAfter, validBefore, nonce, signature);
-        
-        // 2. Replay MUST fail and catch the exact custom error
-        vm.expectRevert(abi.encodeWithSelector(AgentVault.NonceAlreadyConsumed.selector, nonce));
-        vault.executeGuardianPayment(payee, amount, validAfter, validBefore, nonce, signature);
+        // 1. Initial settlement succeeds and consumes the nonce inside the token.
+        vault.executeGuardianPayment(payer, payeeAddr, amount, validAfter, validBefore, nonce, signature);
+
+        // 2. Replaying the same authorization MUST be rejected by the token.
+        vm.expectRevert(bytes("EIP3009: authorization is used"));
+        vault.executeGuardianPayment(payer, payeeAddr, amount, validAfter, validBefore, nonce, signature);
     }
 }
 
 contract MintableERC20 is ERC20 {
+    // Models USDC's native EIP-3009 nonce ledger, keyed per authorizer.
+    mapping(address => mapping(bytes32 => bool)) public authorizationState;
+
     constructor() ERC20("Mock USD Coin", "mUSDC") {}
     function mint(address to, uint256 amount) external { _mint(to, amount); }
     function decimals() public pure override returns (uint8) { return 6; }
-    
-    function receiveWithAuthorization(
-        address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, bytes calldata signature
+
+    // Stand-in for USDC.transferWithAuthorization: the destination is fixed by the
+    // signed payload, the nonce is consumed per `from`, and funds move from -> to.
+    // (Signature verification is USDC's job; the mock asserts the routing + replay guard.)
+    function transferWithAuthorization(
+        address from, address to, uint256 value, uint256, uint256, bytes32 nonce, bytes calldata
     ) external {
-        // dummy for testing
+        require(!authorizationState[from][nonce], "EIP3009: authorization is used");
+        authorizationState[from][nonce] = true;
+        _transfer(from, to, value);
     }
 }
 

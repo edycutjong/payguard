@@ -9,6 +9,11 @@ interface IERC20WithPermit {
     function receiveWithAuthorization(
         address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, bytes calldata signature
     ) external;
+    // Locks the destination into the signed payload, so a mempool observer cannot
+    // re-point the payment by mutating calldata. USDC consumes the nonce internally.
+    function transferWithAuthorization(
+        address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, bytes calldata signature
+    ) external;
 }
 
 /// @title AgentVault — minimal conditional USDC escrow for the Pharos agent economy.
@@ -40,7 +45,6 @@ contract AgentVault is ReentrancyGuard {
 
     error ZeroAmount();
     error BadDeadline();
-    error NotPayer();
     error WrongStatus();
     error BadPreimage();
     error NotExpired();
@@ -59,26 +63,34 @@ contract AgentVault is ReentrancyGuard {
         if (amount == 0) revert ZeroAmount();
         if (deadline <= block.timestamp) revert BadDeadline();
 
+        // Credit the amount actually received, so a fee-on-transfer token can never
+        // inflate totalLocked past the real balance (keeps the solvency invariant true).
+        // Safe under nonReentrant: no external call can re-enter between the two reads.
+        uint256 balBefore = usdc.balanceOf(address(this));
+        usdc.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 received = usdc.balanceOf(address(this)) - balBefore;
+
         id = nextId++;
         escrows[id] = Escrow({
             payer: msg.sender,
             payee: payee,
-            amount: amount,
+            amount: received,
             conditionHash: conditionHash,
             deadline: deadline,
             status: Status.Locked
         });
-        totalLocked += amount;
+        totalLocked += received;
 
-        emit Locked(id, msg.sender, payee, amount, conditionHash, deadline);
-        usdc.safeTransferFrom(msg.sender, address(this), amount); // pull funds last
+        emit Locked(id, msg.sender, payee, received, conditionHash, deadline);
     }
 
-    /// @notice Payer releases to payee by revealing the preimage, before the deadline.
+    /// @notice Release to the payee by revealing the preimage, before the deadline.
+    /// @dev Permissionless by design (HTLC semantics): funds always route to the
+    ///      escrowed `payee`, so whoever learns the preimage — including the payee who
+    ///      performed the work — can settle. The payer cannot hold earned funds hostage.
     function release(uint256 id, bytes calldata preimage) external nonReentrant {
         Escrow storage e = escrows[id];
         if (e.status != Status.Locked) revert WrongStatus();
-        if (msg.sender != e.payer) revert NotPayer();
         if (block.timestamp > e.deadline) revert Expired();
         if (keccak256(preimage) != e.conditionHash) revert BadPreimage();
 
@@ -106,12 +118,15 @@ contract AgentVault is ReentrancyGuard {
         usdc.safeTransfer(payer, amount);        // interaction
     }
 
-    // Track EIP-3009 nonces to prevent replay attacks
-    mapping(bytes32 => bool) public executedNonces;
-
-    error NonceAlreadyConsumed(bytes32 nonce);
-
+    /// @notice Settle an EIP-3009 authorized payment straight from `payer` to `payee`.
+    /// @dev Uses `transferWithAuthorization`: the signature is bound over (from, to, value,
+    ///      validAfter, validBefore, nonce), so the destination cannot be re-pointed by a
+    ///      front-runner, and the funds never enter this vault (no black hole). Replay
+    ///      protection is the token's responsibility — USDC consumes `nonce` per `from`
+    ///      internally, so a redundant local mapping would only waste gas and add a
+    ///      cross-payer griefing surface.
     function executeGuardianPayment(
+        address payer,
         address payee,
         uint256 amount,
         uint256 validAfter,
@@ -119,16 +134,8 @@ contract AgentVault is ReentrancyGuard {
         bytes32 nonce,
         bytes calldata signature
     ) external nonReentrant {
-        // 1. CHECKS
-        if (executedNonces[nonce]) revert NonceAlreadyConsumed(nonce);
-        // (Assume signature verification logic here)
-
-        // 2. EFFECTS (State mutations MUST occur before external interactions)
-        executedNonces[nonce] = true;
-
-        // 3. INTERACTIONS
-        IERC20WithPermit(address(usdc)).receiveWithAuthorization(
-            payee, address(this), amount, validAfter, validBefore, nonce, signature
+        IERC20WithPermit(address(usdc)).transferWithAuthorization(
+            payer, payee, amount, validAfter, validBefore, nonce, signature
         );
     }
 }
