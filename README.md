@@ -1,4 +1,4 @@
-you <div align="center">
+<div align="center">
   <img src="docs/icon-animated.svg" width="140" alt="PayGuard">
 
   <h1>PayGuard 💂</h1>
@@ -22,13 +22,34 @@ you <div align="center">
 
 ---
 
+## 🚀 Run it — for judges
+
+> **Verify the core claims in 30 seconds — zero keys, zero accounts, fully offline:**
+
+```bash
+npm install && npm run bench                                         # → 8/8 attacks blocked
+forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test   # → 21/21 + fuzz + reentrancy
+```
+
+Want the live on-chain settlement too? It's a real testnet tx you can verify without running anything —
+see [Phase 1 on-chain proof](#-phase-1-on-chain-proof-pharos-atlantic-688689). To reproduce it locally
+(needs a funded Atlantic test wallet):
+
+```bash
+cp .env.example .env          # fill AGENT_PK, FACILITATOR_PK, RECEIVER_ADDRESS (see comments)
+forge script script/DeployMockUSDC.s.sol --rpc-url atlantic --broadcast   # prints MockUSDC → set USDC_ADDRESS
+npm run probe                 # prove EIP-3009 settlement on Atlantic
+npm run server                # terminal 1 — x402-protected resource server
+npm run demo                  # terminal 2 — guarded agent pays end-to-end (settles 0.001 USDC)
+```
+
 ## 📸 See it in action
 
 <p align="center">
-  <img src="docs/readme-hero-animated.svg" width="100%" alt="PayGuard — GuardianRail blocks 5/5 agent-drain attacks and settles on Pharos">
+  <img src="docs/readme-hero-animated.svg" width="100%" alt="PayGuard — GuardianRail blocks 8/8 agent-drain attacks and settles on Pharos">
 </p>
 
-**GuardianRail faces 5 live attacks — every unauthorized spend is blocked *before* the agent ever signs:**
+**GuardianRail faces 8 attack vectors — every unauthorized spend is blocked *before* the agent ever signs:**
 
 ```text
   🛡️  PayGuard · GuardianRail — Attack → Blocked
@@ -39,9 +60,12 @@ you <div align="center">
 │ 1       │ 2. The Phish (0xFakeToken)      │ 🛑 BLOCKED      │ INVALID_ASSET       │
 │ 2       │ 3. The Rogue Node (bad payTo)   │ 🛑 BLOCKED      │ UNAPPROVED_PAYEE    │
 │ 3       │ 4. The Revert (sim fails)       │ 🛑 BLOCKED      │ SIMULATION_FAILED   │
-│ 4       │ 5. The Clean Run                │ ✅ AUTHORIZED   │ AUTHORIZED          │
+│ 4       │ 5. The Inflator (negative amt)  │ 🛑 BLOCKED      │ MAX_SPEND           │
+│ 5       │ 6. The Malformed (float amt)    │ 🛑 BLOCKED      │ INVALID_ASSET       │
+│ 6       │ 7. The Clean Run                │ ✅ AUTHORIZED   │ AUTHORIZED          │
 └─────────┴─────────────────────────────────┴─────────────────┴─────────────────────┘
-  ✅ 5/5 vectors handled correctly — 100% of unauthorized agent spends blocked.
+  ✅ TOC/TOU pin — 2-entry offer collapsed to the single validated requirement
+  ✅ 8/8 vectors handled correctly — 100% of unauthorized agent spends blocked.
 ```
 
 ---
@@ -99,18 +123,18 @@ needs **no HTTP-facilitator service** — the demo is deterministic even if the 
 | **Pharos `x402`** (flagship rail) | guarded client · resource server · in-process facilitator settling EIP-3009 | `src/guardrail.ts` · `src/server.ts` · `src/facilitator.ts` · `src/demo.ts` |
 | **Phase 1 — Skill** | Anthropic Agent Skill module (the deliverable) | `SKILL.md` |
 | **CertiK Skill Scanner** (security standard) | minimal SafeERC20 + ReentrancyGuard + strict-CEI escrow · 100% test coverage · Slither-clean | `contracts/AgentVault.sol` |
-| **Pharos Atlantic (688689)** | real, verifiable on-chain settlement | tx [`0x331ee3…`](#-phase-1-on-chain-proof-pharos-atlantic-688689) |
+| **Pharos Atlantic (688689)** | real, verifiable on-chain settlement | tx [`0xfd6e66…`](#-phase-1-on-chain-proof-pharos-atlantic-688689) |
 
 ## ✅ Proven (reproducible)
 
 ```text
 $ npm run bench          # GuardianRail — offline, deterministic
-  ✅ 5/5 vectors handled correctly — 100% of unauthorized agent spends blocked.
+  ✅ 8/8 vectors handled correctly — 100% of unauthorized agent spends blocked.
 
 $ forge test             # AgentVault + MockUSDC — OZ v5.6.1 / solc 0.8.28
   [PASS] testFuzz_BalanceMatchesTotalLocked(uint256) (runs: 256)
-  [PASS] test_ReentrancyGuardBlocksReentry()        … (+16 more)
-  18 tests passed; 0 failed; 0 skipped
+  [PASS] test_ReentrancyGuardBlocksReentry()        … (+19 more)
+  21 tests passed; 0 failed; 0 skipped
 
 $ forge coverage         # contracts/ (AgentVault + MockUSDC)
   100% lines · 100% statements · 100% branches · 100% functions
@@ -128,8 +152,8 @@ agent receives the protected content — all on `@x402/*` v2.14.
 | Layer | Tool | Status |
 |---|---|---|
 | Type safety | `tsc --noEmit` | ✅ |
-| Skill tests | GuardianRail attack bench (5 vectors) | ✅ 5/5 |
-| Contract tests | Foundry — 256-run fuzz + reentrancy + EIP-3009 | ✅ 18/18 |
+| Skill tests | GuardianRail attack bench (8 vectors) | ✅ 8/8 |
+| Contract tests | Foundry — 256-run fuzz + reentrancy + EIP-3009 | ✅ 21/21 |
 | Contract coverage | `forge coverage` (contracts/) | ✅ 100% |
 | Static analysis (Solidity) | Slither | ✅ 0 high / 0 medium |
 | Static analysis (TypeScript) | CodeQL | ✅ |
@@ -139,27 +163,6 @@ agent receives the protected content — all on `@x402/*` v2.14.
 
 A 3-stage GitHub Actions pipeline (**Quality · Security · Gate**) runs on every push/PR — see
 `.github/workflows/ci.yml`. Locally: `npm run ci` · `npm run typecheck` · `make security-scan`.
-
-## 🚀 Run it — for judges
-
-> **Verify the core claims in 30 seconds — zero keys, zero accounts, fully offline:**
-
-```bash
-npm install && npm run bench                                         # → 5/5 attacks blocked
-forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test   # → 12/12 + fuzz + reentrancy
-```
-
-Want the live on-chain settlement too? It's a real testnet tx you can verify without running anything —
-see [Phase 1 on-chain proof](#-phase-1-on-chain-proof-pharos-atlantic-688689). To reproduce it locally
-(needs a funded Atlantic test wallet):
-
-```bash
-cp .env.example .env          # fill AGENT_PK, FACILITATOR_PK, RECEIVER_ADDRESS (see comments)
-forge script script/DeployMockUSDC.s.sol --rpc-url atlantic --broadcast   # prints MockUSDC → set USDC_ADDRESS
-npm run probe                 # prove EIP-3009 settlement on Atlantic
-npm run server                # terminal 1 — x402-protected resource server
-npm run demo                  # terminal 2 — guarded agent pays end-to-end (settles 0.001 USDC)
-```
 
 ## 🔐 Security → CertiK mapping
 
@@ -177,9 +180,9 @@ npm run demo                  # terminal 2 — guarded agent pays end-to-end (se
 | Artifact | Value |
 |---|---|
 | MockUSDC (EIP-3009) | `0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC` |
-| Settlement tx | `0x331ee3ff225c8b8a9725e457d8aa9978240a3504b018aa55fedd16680706ffd2` |
+| Settlement tx | `0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253` |
 
-> Verified on-chain — `status: success`, block `24047421`. Check it yourself:
+> Verified on-chain — `status: success`, block `24099194`. Check it yourself:
 > `eth_getTransactionByHash` on RPC `https://atlantic.dplabs-internal.com/`.
 
 ## 📁 Repo layout
@@ -198,7 +201,7 @@ contracts/MockUSDC.sol       EIP-3009 test USDC (100% coverage)
 script/DeployMockUSDC.s.sol  deploy MockUSDC → USDC_ADDRESS
 test/AgentVault.t.sol        AgentVault suite (fuzz + reentrancy)
 test/MockUSDC.t.sol          EIP-3009 transferWithAuthorization suite
-bench/malicious_bench.ts     5/5 attack-vector bench
+bench/malicious_bench.ts     8/8 attack-vector bench
 ```
 
 ## Stack

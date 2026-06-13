@@ -181,9 +181,9 @@ that settles in-process — deterministic demo even if the public facilitator is
 | Artifact | Value |
 |---|---|
 | MockUSDC (EIP-3009) | `0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC` |
-| Settlement tx | `0x331ee3ff225c8b8a9725e457d8aa9978240a3504b018aa55fedd16680706ffd2` |
+| Settlement tx | `0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253` |
 
-> Verified on-chain — `eth_getTransactionReceipt` → `status: 0x1 (success)`, block 24047421,
+> Verified on-chain — `eth_getTransactionReceipt` → `status: 0x1 (success)`, block 24099194,
 > on Pharos Atlantic (688689) via RPC `https://atlantic.dplabs-internal.com/`.
 
 ## Payment Flow (with GuardianRail injected)

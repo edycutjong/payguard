@@ -7,12 +7,12 @@ Solidity **0.8.28** · OpenZeppelin **5.6.1** · Foundry. (Run `forge` commands 
 | Contract | Address | Status |
 |---|---|---|
 | **MockUSDC** | `0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC` | ✅ **deployed & verified** — code present, `symbol` USDC, 6 decimals, 1,000,000 minted to deployer |
-| **AgentVault** | _(deploy-ready)_ | ✅ test-verified **11/11**; deploy with `--constructor-args <USDC_ADDRESS>` |
+| **AgentVault** | _(deploy-ready)_ | ✅ test-verified **15/15**; deploy with `--constructor-args <USDC_ADDRESS>` |
 
 - **RPC:** `https://atlantic.dplabs-internal.com/`
 - **Settlement proof** (EIP-3009 `transferWithAuthorization` on MockUSDC):
-  `0x331ee3ff225c8b8a9725e457d8aa9978240a3504b018aa55fedd16680706ffd2`
-  → receipt `status: 0x1 (success)`, block `24047421`.
+  `0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253`
+  → receipt `status: 0x1 (success)`, block `24099194`.
 
 ## Contracts
 
@@ -23,11 +23,12 @@ Minimal, **non-upgradeable**, strict-CEI escrow for milestone/conditional paymen
 ```solidity
 constructor(address _usdc);
 function lock(address payee, uint256 amount, bytes32 conditionHash, uint64 deadline) external returns (uint256 id);
-function release(uint256 id, bytes calldata preimage) external; // payer reveals preimage → payee
+function release(uint256 id, bytes calldata preimage) external; // reveal preimage → payee (permissionless; HTLC)
 function refund(uint256 id) external;                            // after deadline → back to payer
 ```
-Verified by `test/AgentVault.t.sol` → **11/11**, including a 256-run fuzz invariant
-(`vault balance == totalLocked`) and a live reentrancy attack that is reverted by the guard.
+Verified by `test/AgentVault.t.sol` → **15/15**, including a 256-run fuzz invariant
+(`vault balance == totalLocked`), a live reentrancy attack reverted by the guard, and a
+payer→payee EIP-3009 guardian-payment path (no front-running, no trapped funds).
 
 ### `MockUSDC.sol` — EIP-3009 test USDC
 Minimal `transferWithAuthorization` token used by the settlement probe/demo. EIP-712 domain
@@ -39,7 +40,7 @@ name **"USD Coin"**, version **"2"**, **6 decimals**; mints 1,000,000 USDC to th
 # from the PayGuard root
 forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts
 forge build
-forge test                                                          # → 11/11
+forge test                                                          # → 21/21
 
 # MockUSDC (mints 1M USDC to AGENT_PK; prints the address → set USDC_ADDRESS in .env)
 forge script script/DeployMockUSDC.s.sol --rpc-url atlantic --broadcast
