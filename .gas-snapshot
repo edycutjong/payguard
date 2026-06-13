@@ -1,5 +1,3 @@
-AgentVaultTest:testFuzz_BalanceMatchesTotalLocked(uint256) (runs: 256, μ: 219799, ~: 219734)
-AgentVaultTest:testFuzz_RevertOnSignatureReplay(address,uint256,bytes32,bytes) (runs: 257, μ: 87194, ~: 87775)
 AgentVaultTest:test_AnyoneWithPreimageCanRelease() (gas: 223698)
 AgentVaultTest:test_GuardianPaymentTransfersPayerToPayee() (gas: 83308)
 AgentVaultTest:test_LockThenRelease() (gas: 221556)

@@ -23,7 +23,10 @@ jobs:
       - name: Run Tests & Fuzzing
         run: forge test -vv
       - name: Gas Regression Check
-        run: forge snapshot --check
+        # Deterministic gas only. Fuzz mean/median gas is seed-dependent (variable-length
+        # bytes args, vm.assume run-count drift) and not reproducible across runners, so
+        # fuzz tests still run in the step above but are excluded from the gas gate.
+        run: forge snapshot --check --no-match-test "testFuzz"
 
   backend:
     name: TypeScript Backend
