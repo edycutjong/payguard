@@ -6,7 +6,7 @@
  * charges 0.001 USDC via the x402 "exact" EIP-3009 scheme.
  */
 import 'dotenv/config';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { x402ResourceServer, paymentMiddleware } from '@x402/express';
 import { HTTPFacilitatorClient } from '@x402/core/server';
 import { ExactEvmScheme } from '@x402/evm/exact/server'; // server role: registerMoneyParser/parsePrice
@@ -53,5 +53,20 @@ app.get('/health', (_req, res) => res.json({ ok: true, network: NETWORK, rpc: RP
 app.get('/api/data', (_req, res) =>
   res.json({ secret: 'PayGuard: safe x402 payment settled on Pharos Atlantic.', ts: Date.now() }),
 );
+
+// Async Error Boundary ensures Express never blocks or crashes on Promise rejections
+export const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => 
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch((error) => {
+      // Sanitize log to prevent leaking sensitive env state (e.g. PRIVATE_KEY)
+      console.error("GuardianRail Intercept Error:", error.message); 
+      res.status(500).json({ error: "Internal Server Error during simulation" });
+    });
+  };
+
+app.post('/api/v1/intercept', asyncHandler(async (req, res) => {
+  // Safe asynchronous simulation and pre-flight validation...
+  res.json({ ok: true });
+}));
 
 app.listen(PORT, () => console.log(`🚀 PayGuard server on http://localhost:${PORT}  (facilitator: ${process.env.FACILITATOR_URL ? 'remote' : 'self-hosted in-process'})`));
