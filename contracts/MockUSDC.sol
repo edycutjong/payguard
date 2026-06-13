@@ -58,4 +58,16 @@ contract MockUSDC is ERC20, EIP712 {
 
         _transfer(from, to, value);
     }
+
+    function receiveWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        bytes calldata signature
+    ) external {
+        // dummy for testing
+    }
 }

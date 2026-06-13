@@ -5,6 +5,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+interface IERC20WithPermit {
+    function receiveWithAuthorization(
+        address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, bytes calldata signature
+    ) external;
+}
+
 /// @title AgentVault — minimal conditional USDC escrow for the Pharos agent economy.
 /// @notice Deliberately tiny + auditable (CertiK Skill Scanner target): no streaming,
 ///         no upgradeability, no delegatecall. SafeERC20 + ReentrancyGuard + strict CEI.
@@ -98,5 +104,31 @@ contract AgentVault is ReentrancyGuard {
 
         emit Refunded(id, payer, amount);
         usdc.safeTransfer(payer, amount);        // interaction
+    }
+
+    // Track EIP-3009 nonces to prevent replay attacks
+    mapping(bytes32 => bool) public executedNonces;
+
+    error NonceAlreadyConsumed(bytes32 nonce);
+
+    function executeGuardianPayment(
+        address payee,
+        uint256 amount,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        bytes calldata signature
+    ) external nonReentrant {
+        // 1. CHECKS
+        if (executedNonces[nonce]) revert NonceAlreadyConsumed(nonce);
+        // (Assume signature verification logic here)
+
+        // 2. EFFECTS (State mutations MUST occur before external interactions)
+        executedNonces[nonce] = true;
+
+        // 3. INTERACTIONS
+        IERC20WithPermit(address(usdc)).receiveWithAuthorization(
+            payee, address(this), amount, validAfter, validBefore, nonce, signature
+        );
     }
 }
