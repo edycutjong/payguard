@@ -4,13 +4,14 @@
   <h1>PayGuard 💂</h1>
   <p><em>The CertiK-grade seatbelt for x402 — safe, guarded agent payments on Pharos.</em></p>
 
+  <img src="docs/readme-hero-animated.svg" width="100%" alt="PayGuard — GuardianRail blocks 8/8 agent-drain attacks and settles on Pharos">
+
   [![Agent Skill](https://img.shields.io/badge/📜_Agent-Skill-06B6D4?style=for-the-badge)](SKILL.md)
-  <!-- VIDEO: once recorded, swap #-see-it-in-action for the video URL (storyboard in DEMO_SCRIPT.md) -->
   [![Demo Video](https://img.shields.io/badge/▶_Demo-Video-EF4444?style=for-the-badge)](#-see-it-in-action)
   [![On-chain Settled](https://img.shields.io/badge/🛰️_On--chain-Settled-22C55E?style=for-the-badge)](#-phase-1-on-chain-proof-pharos-atlantic-688689)
   [![Pharos Hackathon](https://img.shields.io/badge/🏆_Pharos-Skill_Hackathon-8B5CF6?style=for-the-badge)](https://dorahacks.io/hackathon/pharos-phase1)
 
-  <br/><br/>
+  <br/>
 
   ![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)
   ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
@@ -28,11 +29,11 @@
 > **Verify the core claims in 30 seconds — zero keys, zero accounts, fully offline:**
 
 ```bash
-npm install && npm run bench                                         # → 8/8 attacks blocked
-npm run test:guard                                                  # → 20/20 guard-brain edge cases (offline)
-forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test   # → 21/21 + fuzz + reentrancy
-npm run agent                                                        # → autonomous agent; GuardianRail blocks 5/5 unsafe buys (offline, no key)
-npm run mcp                                                          # → GuardianRail as an MCP server (any MCP client can call the guard)
+npm install && npm run bench # → 8/8 attacks blocked
+npm run test:guard           # → 20/20 guard-brain edge cases (offline)
+forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test # → 21/21 + fuzz + reentrancy
+npm run agent                # → autonomous agent; GuardianRail blocks 5/5 unsafe buys (offline, no key)
+npm run mcp                  # → GuardianRail as an MCP server (any MCP client can call the guard)
 ```
 
 Want the live on-chain settlement too? It's a real testnet tx you can verify without running anything —
@@ -40,18 +41,14 @@ see [Phase 1 on-chain proof](#-phase-1-on-chain-proof-pharos-atlantic-688689). T
 (needs a funded Atlantic test wallet):
 
 ```bash
-cp .env.example .env          # fill AGENT_PK, FACILITATOR_PK, RECEIVER_ADDRESS (see comments)
-forge script script/DeployMockUSDC.s.sol --rpc-url atlantic --broadcast   # prints MockUSDC → set USDC_ADDRESS
-npm run probe                 # prove EIP-3009 settlement on Atlantic
-npm run server                # terminal 1 — x402-protected resource server
-npm run demo                  # terminal 2 — guarded agent pays end-to-end (settles 0.001 USDC)
+cp .env.example .env # fill AGENT_PK, FACILITATOR_PK, RECEIVER_ADDRESS (see comments)
+forge script script/DeployMockUSDC.s.sol --rpc-url atlantic --broadcast # prints MockUSDC → set USDC_ADDRESS
+npm run probe        # prove EIP-3009 settlement on Atlantic
+npm run server       # terminal 1 — x402-protected resource server
+npm run demo         # terminal 2 — guarded agent pays end-to-end (settles 0.001 USDC)
 ```
 
 ## 📸 See it in action
-
-<p align="center">
-  <img src="docs/readme-hero-animated.svg" width="100%" alt="PayGuard — GuardianRail blocks 8/8 agent-drain attacks and settles on Pharos">
-</p>
 
 **GuardianRail faces 8 attack vectors — every unauthorized spend is blocked *before* the agent ever signs:**
 
