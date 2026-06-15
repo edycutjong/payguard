@@ -148,6 +148,25 @@ deterministic planner (offline). GuardianRail blocks the drain, token-spoof, rog
 over-budget buys; the agent adapts and finishes within budget — the real, shipped guard protecting a real
 agent loop.
 
+## MCP server (use from any MCP client)
+
+`npm run mcp` exposes the **shipped** guard brain (`evaluateRequirement`, unchanged) as a
+[Model Context Protocol](https://modelcontextprotocol.io) server over stdio — so Claude Desktop,
+Cursor, or any MCP-capable runtime can gate an x402 payment with zero PayGuard-specific code.
+
+| Tool | Input | Returns |
+|---|---|---|
+| `evaluate_payment` | `asset`, `amount`, `payTo` (+ optional `simulationOk`, per-call cap tightening) | `{ allowed, code, reason, amount }` |
+| `get_policy` | — | active operator policy (limits, target asset, allowlist) |
+
+Policy is operator-controlled via env (`PAYGUARD_MAX_SPEND`, `PAYGUARD_DAILY_BUDGET`,
+`PAYGUARD_TARGET_ASSET`, `PAYGUARD_ALLOWED_PAYEES`); a calling agent can only **tighten** it,
+never widen it. Example Claude Desktop config:
+
+```json
+{ "mcpServers": { "payguard": { "command": "npx", "args": ["tsx", "src/mcp.ts"] } } }
+```
+
 ## Security → CertiK mapping
 
 | PayGuard control | Attack it stops |
@@ -159,9 +178,21 @@ agent loop.
 | `AgentVault`: `SafeERC20` + `ReentrancyGuard` + CEI | reentrancy / non-standard-token drains |
 | Minimal contract (no streaming/upgrade/delegatecall) | reduced audit surface for the scanner |
 
+## Limitations & threat boundaries
+
+GuardianRail is a **pre-signature policy gate**, not a universal safety net. It deliberately does **not** cover:
+
+- **A compromised agent key.** If the signing key is stolen, the attacker bypasses the guard entirely. PayGuard shrinks blast radius (per-call + daily caps) but is not a substitute for key security.
+- **A malicious or lying RPC.** The `eth_call` simulation trusts the configured RPC; a hostile endpoint can return a false `ok`. Point it at an RPC you trust.
+- **Post-settlement clawback.** Once a payment passes policy and is signed, settlement follows x402/EIP-3009 semantics — GuardianRail does not reverse a settled transfer.
+- **AgentVault is unaudited.** Minimal, 100%-covered, and Slither-clean, but it has **not** had a paid third-party audit and targets Pharos Atlantic **testnet** with MockUSDC — not mainnet custody of real funds.
+
+These boundaries are intentional: the skill does one job — stop unauthorized spends *before* signing — deterministically. Full disclosure policy in `SECURITY.md`.
+
 ## Test evidence (reproducible)
 
 - **GuardianRail**: `npm run bench` → **8/8** attack vectors handled (deterministic, offline).
+- **Guard edges**: `npm run test:guard` → **20/20** unit checks (boundary amounts, malformed/negative/unsafe/hex coercion, case-insensitive asset & payee, check precedence, per-session budget accumulator).
 - **AgentVault + MockUSDC**: `forge test` → **21/21** (AgentVault **15/15** below + MockUSDC **6/6**), including a 256-run fuzz invariant, an EIP-3009 replay fuzz, and a live reentrancy attack:
 
 ```text
@@ -196,10 +227,11 @@ that settles in-process — deterministic demo even if the public facilitator is
 
 | Artifact | Value |
 |---|---|
-| MockUSDC (EIP-3009) | `0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC` |
-| Settlement tx | `0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253` |
+| MockUSDC (EIP-3009) | [`0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC`](https://atlantic.pharosscan.xyz/address/0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC) |
+| Settlement tx | [`0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253`](https://atlantic.pharosscan.xyz/tx/0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253) |
 
-> Verified on-chain — `eth_getTransactionReceipt` → `status: 0x1 (success)`, block 24099194,
+> Verified on-chain on [Hemera SocialScan](https://atlantic.pharosscan.xyz/tx/0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253) —
+> `eth_getTransactionReceipt` → `status: 0x1 (success)`, block 24099194,
 > on Pharos Atlantic (688689) via RPC `https://atlantic.dplabs-internal.com/`.
 
 ## Payment Flow (with GuardianRail injected)

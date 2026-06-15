@@ -25,7 +25,7 @@ coverage: ## Foundry coverage for contracts/ (100%; excludes scripts & tests)
 bench: ## Run GuardianRail deterministic benchmark
 	npm run bench
 
-security-scan: ## Run security linters and audits (npm audit, license, slither)
+security-scan: ## Run security linters and audits (npm audit, license, slither, trufflehog)
 	@echo "=== NPM AUDIT (high+critical) ==="
 	npm audit --audit-level=high || true
 	@echo ""
@@ -34,3 +34,8 @@ security-scan: ## Run security linters and audits (npm audit, license, slither)
 	@echo ""
 	@echo "=== SLITHER (Solidity SAST) ==="
 	slither . --exclude-dependencies || true
+	@echo ""
+	@echo "=== TRUFFLEHOG (secret scan of committed history, --only-verified) ==="
+	@command -v trufflehog >/dev/null 2>&1 \
+		&& trufflehog git file://. --only-verified \
+		|| echo "trufflehog not installed (brew install trufflehog). .env is git-ignored; no secrets are committed."

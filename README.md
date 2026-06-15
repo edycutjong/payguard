@@ -5,7 +5,8 @@
   <p><em>The CertiK-grade seatbelt for x402 — safe, guarded agent payments on Pharos.</em></p>
 
   [![Agent Skill](https://img.shields.io/badge/📜_Agent-Skill-06B6D4?style=for-the-badge)](SKILL.md)
-  [![Demo Video](https://img.shields.io/badge/▶_Demo-Video-EF4444?style=for-the-badge)](#)
+  <!-- VIDEO: once recorded, swap #-see-it-in-action for the video URL (storyboard in DEMO_SCRIPT.md) -->
+  [![Demo Video](https://img.shields.io/badge/▶_Demo-Video-EF4444?style=for-the-badge)](#-see-it-in-action)
   [![On-chain Settled](https://img.shields.io/badge/🛰️_On--chain-Settled-22C55E?style=for-the-badge)](#-phase-1-on-chain-proof-pharos-atlantic-688689)
   [![Pharos Hackathon](https://img.shields.io/badge/🏆_Pharos-Skill_Hackathon-8B5CF6?style=for-the-badge)](https://dorahacks.io/hackathon/pharos-phase1)
 
@@ -121,6 +122,13 @@ Enforces: canonical-asset (anti-spoof) · per-call cap · daily budget · payee 
 Minimal, non-upgradeable, strict-CEI escrow (`SafeERC20` + `ReentrancyGuard`) for milestone payments:
 `lock(payee, amount, conditionHash, deadline)` → `release(id, preimage)` / `refund(id)`.
 
+### 🔌 MCP-native — call GuardianRail from any agent runtime
+`npm run mcp` exposes the **shipped** guard brain (`evaluateRequirement`, unchanged) as a
+[Model Context Protocol](https://modelcontextprotocol.io) server over stdio, so Claude Desktop,
+Cursor, or any MCP client can ask *"is this x402 payment safe?"* before signing — no
+PayGuard-specific code. Tools: `evaluate_payment` (asset · amount · payTo → `{ allowed, code, reason }`)
+and `get_policy`. Policy is operator-set via env; an agent can only **tighten** it, never widen it.
+
 ## 🏗️ Architecture (Hybrid facilitator — "Option 3")
 
 ```mermaid
@@ -146,6 +154,7 @@ needs **no HTTP-facilitator service** — the demo is deterministic even if the 
 |---|---|---|
 | **Pharos `x402`** (flagship rail) | guarded client · resource server · in-process facilitator settling EIP-3009 | `src/guardrail.ts` · `src/server.ts` · `src/facilitator.ts` · `src/demo.ts` |
 | **Phase 1 — Skill** | Anthropic Agent Skill module (the deliverable) | `SKILL.md` |
+| **MCP** | GuardianRail exposed as an MCP server — any MCP client can call the guard | `src/mcp.ts` |
 | **CertiK Skill Scanner** (security standard) | minimal SafeERC20 + ReentrancyGuard + strict-CEI escrow · 100% test coverage · Slither-clean | `contracts/AgentVault.sol` |
 | **Pharos Atlantic (688689)** | real, verifiable on-chain settlement | tx [`0xfd6e66…`](#-phase-1-on-chain-proof-pharos-atlantic-688689) |
 
@@ -177,16 +186,19 @@ agent receives the protected content — all on `@x402/*` v2.14.
 |---|---|---|
 | Type safety | `tsc --noEmit` | ✅ |
 | Skill tests | GuardianRail attack bench (8 vectors) | ✅ 8/8 |
+| Guard unit checks | `npm run test:guard` — boundary/coercion/precedence/budget edges | ✅ 20/20 |
+| MCP compatibility | GuardianRail exposed as MCP tools (`npm run mcp`) | ✅ |
 | Contract tests | Foundry — 256-run fuzz + reentrancy + EIP-3009 | ✅ 21/21 |
 | Contract coverage | `forge coverage` (contracts/) | ✅ 100% |
 | Static analysis (Solidity) | Slither | ✅ 0 high / 0 medium |
 | Static analysis (TypeScript) | CodeQL | ✅ |
 | On-chain E2E | guarded payment settles on Atlantic | ✅ |
-| Secret scanning | TruffleHog (`--only-verified`) | ✅ |
+| Secret scanning | TruffleHog `--only-verified` (`make security-scan`) | ✅ none committed (`.env` git-ignored) |
 | Supply chain | npm audit + Dependabot | ✅ |
 
-A 3-stage GitHub Actions pipeline (**Quality · Security · Gate**) runs on every push/PR — see
-`.github/workflows/ci.yml`. Locally: `npm run ci` · `npm run typecheck` · `make security-scan`.
+GitHub Actions runs on every push/PR — **Foundry** (build · test · gas-snapshot gate) and the
+**TypeScript backend** (typecheck · lint · bench 8/8 · guard 20/20), plus a **CodeQL** workflow
+(`.github/workflows/`). Locally, `make security-scan` adds Slither · npm audit · license-check · TruffleHog.
 
 ## 🔐 Security → CertiK mapping
 
@@ -203,11 +215,12 @@ A 3-stage GitHub Actions pipeline (**Quality · Security · Gate**) runs on ever
 
 | Artifact | Value |
 |---|---|
-| MockUSDC (EIP-3009) | `0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC` |
-| Settlement tx | `0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253` |
+| MockUSDC (EIP-3009) | [`0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC`](https://atlantic.pharosscan.xyz/address/0xe54205649D6d41Aa9cCdD5667eaDB62f1dFA84AC) |
+| Settlement tx | [`0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253`](https://atlantic.pharosscan.xyz/tx/0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253) |
 
-> Verified on-chain — `status: success`, block `24099194`. Check it yourself:
-> `eth_getTransactionByHash` on RPC `https://atlantic.dplabs-internal.com/`.
+> Verified on-chain — `status: success`, block `24099194`. Inspect it one click on the
+> explorer → [**Hemera SocialScan**](https://atlantic.pharosscan.xyz/tx/0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253),
+> or reproduce it via `eth_getTransactionByHash` on RPC `https://atlantic.dplabs-internal.com/`.
 
 ## 📁 Repo layout
 
@@ -220,6 +233,7 @@ src/facilitator.ts           in-process x402Facilitator (self-hosted fallback)
 src/server.ts                x402-protected resource server
 src/demo.ts                  end-to-end guarded payment
 src/agent.ts                 Skill-to-Agent — autonomous Claude agent on the guard
+src/mcp.ts                   GuardianRail as an MCP server (evaluate_payment, get_policy)
 src/probe.ts                 EIP-3009 settlement probe
 contracts/AgentVault.sol     Tool 2 — conditional escrow (100% coverage)
 contracts/MockUSDC.sol       EIP-3009 test USDC (100% coverage)
