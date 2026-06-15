@@ -1,10 +1,29 @@
 {
-  "name": "payguard-skill",
+  "name": "@edycutjong/payguard",
   "version": "0.1.0",
+  "description": "GuardianRail — the safety layer x402 lacks: deterministic spend caps, asset-spoof protection, payee allowlist, and eth_call pre-flight simulation before an agent signs. Ships as a library and an MCP server.",
   "type": "module",
-  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "payguard-mcp": "dist/mcp.js"
+  },
+  "files": [
+    "dist",
+    "SKILL.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "ci": "npm run bench && npm run test:guard && forge test",
+    "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "solhint 'contracts/**/*.sol' && tsc --noEmit",
     "probe": "tsx src/probe.ts",
@@ -15,7 +34,33 @@
     "bench": "tsx bench/malicious_bench.ts",
     "test:guard": "tsx bench/guard_unit.ts",
     "test": "forge test",
-    "audit": "npm audit --audit-level=high"
+    "audit": "npm audit --audit-level=high",
+    "prepublishOnly": "npm run typecheck && npm run bench && npm run test:guard && npm run build",
+    "release:patch": "npm version patch && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags",
+    "release:major": "npm version major && git push --follow-tags"
+  },
+  "keywords": [
+    "x402",
+    "mcp",
+    "pharos",
+    "ai-agent",
+    "payments",
+    "guardrail",
+    "agent-security",
+    "eip-3009"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edycutjong/payguard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/edycutjong/payguard/issues"
+  },
+  "homepage": "https://github.com/edycutjong/payguard#readme",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
@@ -32,6 +77,7 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.0",
     "solhint": "^6.2.1",
+    "tsup": "^8.5.1",
     "tsx": "^4.6.0",
     "typescript": "^5.3.0"
   }

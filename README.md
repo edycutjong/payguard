@@ -7,7 +7,7 @@
   <img src="docs/readme-hero-animated.svg" width="100%" alt="PayGuard — GuardianRail blocks 8/8 agent-drain attacks and settles on Pharos">
 
   [![Agent Skill](https://img.shields.io/badge/📜_Agent-Skill-06B6D4?style=for-the-badge)](SKILL.md)
-  [![Demo Video](https://img.shields.io/badge/▶_Demo-Video-EF4444?style=for-the-badge)](#-see-it-in-action)
+  [![Demo Video](https://img.shields.io/badge/▶_Demo-Video-EF4444?style=for-the-badge)](https://youtu.be/8gZxsIgcm6U)
   [![On-chain Settled](https://img.shields.io/badge/🛰️_On--chain-Settled-22C55E?style=for-the-badge)](#-phase-1-on-chain-proof-pharos-atlantic-688689)
   [![Pharos Hackathon](https://img.shields.io/badge/🏆_Pharos-Skill_Hackathon-8B5CF6?style=for-the-badge)](https://dorahacks.io/hackathon/pharos-phase1)
 
@@ -16,10 +16,13 @@
   ![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)
   ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
   ![x402](https://img.shields.io/badge/x402-v2-8b5cf6)
+  [![MCP](https://img.shields.io/badge/MCP-server-0EA5E9)](https://modelcontextprotocol.io)
   ![tested with Foundry](https://img.shields.io/badge/tested%20with-Foundry-black)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
   [![CI](https://github.com/edycutjong/payguard/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/payguard/actions/workflows/ci.yml)
   [![CodeQL](https://github.com/edycutjong/payguard/actions/workflows/codeql.yml/badge.svg)](https://github.com/edycutjong/payguard/actions/workflows/codeql.yml)
+  <!-- NPM badge — uncomment AFTER the first `npm run release:*` publish (it 404s until the package exists): -->
+  <!-- [![npm](https://img.shields.io/npm/v/@edycutjong/payguard?logo=npm)](https://www.npmjs.com/package/@edycutjong/payguard) -->
 </div>
 
 ---

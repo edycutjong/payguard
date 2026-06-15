@@ -1,0 +1,37 @@
+# Belt-and-suspenders denylist. The package.json "files" allowlist (dist, SKILL.md) is the
+# primary filter; this guarantees secrets/dev/chain files never ship even if "files" changes.
+
+# ── Secrets (NEVER publish) ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+.private_key
+*.pem
+
+# ── Source & dev (the published package is the built dist/, not the source) ──
+src/
+bench/
+test/
+script/
+tsup.config.ts
+tsconfig.json
+.solhint.json
+
+# ── Solidity / Foundry (not part of the npm package) ─────────────────────
+contracts/
+out/
+cache/
+broadcast/
+lib/
+foundry.toml
+.gas-snapshot
+
+# ── CI / tooling / repo meta ─────────────────────────────────────────────
+.github/
+.gitignore
+Makefile
+DEMO_SCRIPT.md
+docs/
+node_modules/
+*.log
+.DS_Store

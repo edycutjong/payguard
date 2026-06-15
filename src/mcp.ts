@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * mcp.ts — GuardianRail as a Model Context Protocol (MCP) server.
  *
