@@ -9,7 +9,10 @@
   [![Agent Skill](https://img.shields.io/badge/📜_Agent-Skill-06B6D4?style=for-the-badge)](SKILL.md)
   [![Demo Video](https://img.shields.io/badge/▶_Demo-Video-EF4444?style=for-the-badge)](https://youtu.be/8gZxsIgcm6U)
   [![On-chain Settled](https://img.shields.io/badge/🛰️_On--chain-Settled-22C55E?style=for-the-badge)](#-phase-1-on-chain-proof-pharos-atlantic-688689)
+  <br/>
   [![Pharos Hackathon](https://img.shields.io/badge/🏆_Pharos-Skill_Hackathon-8B5CF6?style=for-the-badge)](https://dorahacks.io/hackathon/pharos-phase1)
+  [![DoraHacks BUIDL](https://img.shields.io/badge/🚀_DoraHacks-BUIDL-FF7A00?style=for-the-badge)](https://dorahacks.io/buidl/45238/)
+  [![NPM Version](https://img.shields.io/npm/v/@edycutjong/payguard?style=for-the-badge&logo=npm&color=CB3837)](https://www.npmjs.com/package/@edycutjong/payguard)
 
   <br/>
 
@@ -21,8 +24,6 @@
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
   [![CI](https://github.com/edycutjong/payguard/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/payguard/actions/workflows/ci.yml)
   [![CodeQL](https://github.com/edycutjong/payguard/actions/workflows/codeql.yml/badge.svg)](https://github.com/edycutjong/payguard/actions/workflows/codeql.yml)
-  <!-- NPM badge — uncomment AFTER the first `npm run release:*` publish (it 404s until the package exists): -->
-  <!-- [![npm](https://img.shields.io/npm/v/@edycutjong/payguard?logo=npm)](https://www.npmjs.com/package/@edycutjong/payguard) -->
 </div>
 
 ---
