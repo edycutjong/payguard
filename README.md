@@ -29,8 +29,10 @@
 
 ```bash
 npm install && npm run bench                                         # → 8/8 attacks blocked
+npm run test:guard                                                  # → 20/20 guard-brain edge cases (offline)
 forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test   # → 21/21 + fuzz + reentrancy
 npm run agent                                                        # → autonomous agent; GuardianRail blocks 5/5 unsafe buys (offline, no key)
+npm run mcp                                                          # → GuardianRail as an MCP server (any MCP client can call the guard)
 ```
 
 Want the live on-chain settlement too? It's a real testnet tx you can verify without running anything —
@@ -128,6 +130,11 @@ Minimal, non-upgradeable, strict-CEI escrow (`SafeERC20` + `ReentrancyGuard`) fo
 Cursor, or any MCP client can ask *"is this x402 payment safe?"* before signing — no
 PayGuard-specific code. Tools: `evaluate_payment` (asset · amount · payTo → `{ allowed, code, reason }`)
 and `get_policy`. Policy is operator-set via env; an agent can only **tighten** it, never widen it.
+
+### ♻️ Reuse & compose (the crucial Phase-1 criterion)
+One public API (`src/index.ts`), **three composition seams** — under the x402 client
+(`createGuardedFetch`), as an **MCP tool** (`npm run mcp`), or as the pure, sync `evaluateRequirement`.
+It's *load-bearing, not decorative*: remove GuardianRail and the agent signs whatever a server demands.
 
 ## 🏗️ Architecture (Hybrid facilitator — "Option 3")
 

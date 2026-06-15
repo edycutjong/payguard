@@ -120,6 +120,20 @@ await vault.write.release([id, proof]);      // or vault.refund(id) after the de
 
 ---
 
+## Reuse & compose (the crucial Phase-1 criterion)
+
+GuardianRail is a **pure, dependency-light module** with one public API (`src/index.ts`) and
+**three** ways to compose it into any Pharos agent — pick the seam that fits:
+
+| Way | One-liner | For |
+|---|---|---|
+| **Under the x402 client** | `wrapFetchWithPayment(createGuardedFetch(fetch, policy, { rpcUrl }), client)` | any `@x402/fetch` agent — gates the 402 before signing |
+| **As an MCP tool** | `npm run mcp` → `evaluate_payment` | Claude Desktop / Cursor / any MCP runtime — zero PayGuard code |
+| **As a pure function** | `evaluateRequirement(req, policy, sim)` | your own loop / tests — sync, offline, deterministic |
+
+It is **load-bearing, not decorative**: remove GuardianRail and the agent signs whatever a
+server demands. The entire skill exists to sit in that one gap.
+
 ## Quick Start
 
 ```bash
