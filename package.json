@@ -4,19 +4,22 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "ci": "npm run bench && forge test",
+    "ci": "npm run bench && npm run test:guard && forge test",
     "typecheck": "tsc --noEmit",
     "lint": "solhint 'contracts/**/*.sol' && tsc --noEmit",
     "probe": "tsx src/probe.ts",
     "server": "tsx src/server.ts",
     "demo": "tsx src/demo.ts",
     "agent": "tsx src/agent.ts",
+    "mcp": "tsx src/mcp.ts",
     "bench": "tsx bench/malicious_bench.ts",
+    "test:guard": "tsx bench/guard_unit.ts",
     "test": "forge test",
     "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@x402/core": "^2.14.0",
     "@x402/evm": "^2.14.0",
     "@x402/express": "^2.14.0",
