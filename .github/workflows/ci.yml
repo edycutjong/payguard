@@ -44,3 +44,7 @@ jobs:
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint
+      - name: Skill bench (8 attack vectors)
+        run: npm run bench
+      - name: Guard unit checks (20 edges)
+        run: npm run test:guard
