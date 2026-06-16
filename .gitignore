@@ -18,3 +18,6 @@ lib/
 
 # OS
 .DS_Store
+
+# Large Visual Assets
+docs/screenshots/mcp-demo.gif

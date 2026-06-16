@@ -132,6 +132,8 @@ Cursor, or any MCP client can ask *"is this x402 payment safe?"* before signing 
 PayGuard-specific code. Tools: `evaluate_payment` (asset · amount · payTo → `{ allowed, code, reason }`)
 and `get_policy`. Policy is operator-set via env; an agent can only **tighten** it, never widen it.
 
+![PayGuard MCP Tool Demo](docs/screenshots/mcp-demo.gif)
+
 ### ♻️ Reuse & compose (the crucial Phase-1 criterion)
 One public API (`src/index.ts`), **three composition seams** — under the x402 client
 (`createGuardedFetch`), as an **MCP tool** (`npm run mcp`), or as the pure, sync `evaluateRequirement`.
