@@ -94,7 +94,7 @@ Every push and PR runs a 3-stage GitHub Actions pipeline (Quality · Security ·
 - **CodeQL** — TypeScript static analysis.
 - **TruffleHog** — secret scanning (`--only-verified`).
 - **npm audit** + **Dependabot** — dependency / supply-chain monitoring.
-- **Foundry** — 21 tests incl. 256-run fuzzing, reentrancy, and EIP-3009 coverage (100% on `contracts/`).
+- **Foundry** — 20 tests incl. 256-run fuzzing, reentrancy, and EIP-3009 coverage (100% on `contracts/`).
 - **GuardianRail bench** — 8/8 attack vectors asserted on every run (`npm run bench`).
 
 A regression in any of these is treated as a potential security issue.

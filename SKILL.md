@@ -207,14 +207,12 @@ These boundaries are intentional: the skill does one job — stop unauthorized s
 
 - **GuardianRail**: `npm run bench` → **8/8** attack vectors handled (deterministic, offline).
 - **Guard edges**: `npm run test:guard` → **20/20** unit checks (boundary amounts, malformed/negative/unsafe/hex coercion, case-insensitive asset & payee, check precedence, per-session budget accumulator).
-- **AgentVault + MockUSDC**: `forge test` → **21/21** (AgentVault **15/15** below + MockUSDC **6/6**), including a 256-run fuzz invariant, an EIP-3009 replay fuzz, and a live reentrancy attack:
+- **AgentVault + MockUSDC**: `forge test` → **20/20** (AgentVault **14/14** below + MockUSDC **6/6**), including a 256-run fuzz invariant, a constructor zero address validation, and a live reentrancy attack:
 
 ```text
-Ran 15 tests for test/AgentVault.t.sol:AgentVaultTest
+Ran 14 tests for test/AgentVault.t.sol:AgentVaultTest
 [PASS] testFuzz_BalanceMatchesTotalLocked(uint256) (runs: 256)
-[PASS] testFuzz_RevertOnSignatureReplay(address,uint256,bytes32,bytes) (runs: 256)
 [PASS] test_AnyoneWithPreimageCanRelease()
-[PASS] test_GuardianPaymentTransfersPayerToPayee()
 [PASS] test_LockThenRelease()
 [PASS] test_ReentrancyGuardBlocksReentry()
 [PASS] test_RefundAfterDeadline()
@@ -224,9 +222,10 @@ Ran 15 tests for test/AgentVault.t.sol:AgentVaultTest
 [PASS] test_RevertWhen_RefundOnReleased()
 [PASS] test_RevertWhen_ReleaseAfterDeadline()
 [PASS] test_RevertWhen_ReleaseWithWrongPreimageByThirdParty()
+[PASS] test_RevertWhen_USDCZeroAddress()
 [PASS] test_RevertWhen_WrongPreimage()
 [PASS] test_RevertWhen_ZeroAmount()
-Suite result: ok. 15 passed; 0 failed; 0 skipped
+Suite result: ok. 14 passed; 0 failed; 0 skipped
 ```
 
 - **End-to-end**: `npm run server & npm run demo` → a GuardianRail-guarded agent pays the x402 server and the in-process facilitator **settles 0.001 USDC on Atlantic** (receiver balance moves on-chain), returning the protected content.

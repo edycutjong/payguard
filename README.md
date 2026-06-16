@@ -35,7 +35,7 @@
 ```bash
 npm install && npm run bench # → 8/8 attacks blocked
 npm run test:guard           # → 20/20 guard-brain edge cases (offline)
-forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test # → 21/21 + fuzz + reentrancy
+forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts && forge test # → 20/20 + fuzz + reentrancy
 npm run agent                # → autonomous agent; GuardianRail blocks 5/5 unsafe buys (offline, no key)
 npm run mcp                  # → GuardianRail as an MCP server (any MCP client can call the guard)
 ```
@@ -174,8 +174,8 @@ $ npm run bench          # GuardianRail — offline, deterministic
 
 $ forge test             # AgentVault + MockUSDC — OZ v5.6.1 / solc 0.8.28
   [PASS] testFuzz_BalanceMatchesTotalLocked(uint256) (runs: 256)
-  [PASS] test_ReentrancyGuardBlocksReentry()        … (+19 more)
-  21 tests passed; 0 failed; 0 skipped
+  [PASS] test_ReentrancyGuardBlocksReentry()        … (+18 more)
+  20 tests passed; 0 failed; 0 skipped
 
 $ forge coverage         # contracts/ (AgentVault + MockUSDC)
   100% lines · 100% statements · 100% branches · 100% functions
@@ -188,6 +188,52 @@ The complete flow is verified **end-to-end on Atlantic**: a GuardianRail-guarded
 x402 server, the in-process facilitator verifies and **settles 0.001 USDC on-chain**, and the
 agent receives the protected content — all on `@x402/*` v2.14.
 
+## 🎬 Terminal Walkthrough (Step-by-Step)
+
+The entire user flow, contract testing suite, and security boundaries can be run and verified locally via the automated walkthrough script. Below is the step-by-step breakdown of each beat in the walkthrough:
+
+### Beat 1: Running GuardianRail Malicious Vector Benchmarks
+We run the 8-vector attack suite to verify that token-spoofing, rogue payees, daily budgets, per-call caps, and reverting contracts are blocked pre-flight.
+```bash
+npm run bench
+```
+![Beat 1: Malicious Benchmarks](docs/screenshots/payguard-beat-1.png)
+
+### Beat 2: Running AgentVault Solidity Contract Suite
+We verify the conditional escrow contract and the MockUSDC token tests.
+```bash
+forge test
+```
+![Beat 2: Foundry Contract Suite](docs/screenshots/payguard-beat-2.png)
+
+### Beat 3: Running Autonomous Agent under GuardianRail
+An autonomous agent is given a 5 USDC daily budget and attempts to buy data services. Unsafe services (drains, paused oracles, unapproved payees) are blocked pre-flight.
+```bash
+npm run agent
+```
+![Beat 3: Autonomous Agent](docs/screenshots/payguard-beat-3.png)
+
+### Beat 4: Initializing Local x402 Resource Server
+We spin up the local x402-protected resource server, listening on port 4021.
+```bash
+npm run server
+```
+![Beat 4: Local Server](docs/screenshots/payguard-beat-4.png)
+
+### Beat 5: Running Guarded E2E Payment Settlement
+The guarded agent requests protected data from the server, evaluates the x402 requirement, signs the EIP-3009 payload, and triggers settlement on Pharos Atlantic.
+```bash
+npm run demo
+```
+![Beat 5: E2E Settlement](docs/screenshots/payguard-beat-5.png)
+
+### Beat 6: Verifying EIP-3009 Settlement on Pharos Atlantic
+We check the on-chain transaction logs via Cast to confirm the success status and block number.
+```bash
+cast receipt 0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253 --rpc-url https://atlantic.dplabs-internal.com/ | grep -E "status|blockNumber"
+```
+![Beat 6: On-chain Verification](docs/screenshots/payguard-beat-6.png)
+
 ## 🧪 Engineering harness
 
 | Layer | Tool | Status |
@@ -196,7 +242,7 @@ agent receives the protected content — all on `@x402/*` v2.14.
 | Skill tests | GuardianRail attack bench (8 vectors) | ✅ 8/8 |
 | Guard unit checks | `npm run test:guard` — boundary/coercion/precedence/budget edges | ✅ 20/20 |
 | MCP compatibility | GuardianRail exposed as MCP tools (`npm run mcp`) | ✅ |
-| Contract tests | Foundry — 256-run fuzz + reentrancy + EIP-3009 | ✅ 21/21 |
+| Contract tests | Foundry — 256-run fuzz + reentrancy + EIP-3009 | ✅ 20/20 |
 | Contract coverage | `forge coverage` (contracts/) | ✅ 100% |
 | Static analysis (Solidity) | Slither | ✅ 0 high / 0 medium |
 | Static analysis (TypeScript) | CodeQL | ✅ |

@@ -26,9 +26,8 @@ function lock(address payee, uint256 amount, bytes32 conditionHash, uint64 deadl
 function release(uint256 id, bytes calldata preimage) external; // reveal preimage → payee (permissionless; HTLC)
 function refund(uint256 id) external;                            // after deadline → back to payer
 ```
-Verified by `test/AgentVault.t.sol` → **15/15**, including a 256-run fuzz invariant
-(`vault balance == totalLocked`), a live reentrancy attack reverted by the guard, and a
-payer→payee EIP-3009 guardian-payment path (no front-running, no trapped funds).
+Verified by `test/AgentVault.t.sol` → **14/14**, including a 256-run fuzz invariant
+(`vault balance == totalLocked`) and a live reentrancy attack reverted by the guard.
 
 ### `MockUSDC.sol` — EIP-3009 test USDC
 Minimal `transferWithAuthorization` token used by the settlement probe/demo. EIP-712 domain
@@ -40,7 +39,7 @@ name **"USD Coin"**, version **"2"**, **6 decimals**; mints 1,000,000 USDC to th
 # from the PayGuard root
 forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts
 forge build
-forge test                                                          # → 21/21
+forge test                                                          # → 20/20
 
 # MockUSDC (mints 1M USDC to AGENT_PK; prints the address → set USDC_ADDRESS in .env)
 forge script script/DeployMockUSDC.s.sol --rpc-url atlantic --broadcast

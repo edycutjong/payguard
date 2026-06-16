@@ -17,7 +17,7 @@ import { ExactEvmScheme } from '@x402/evm/exact/client'; // client role: createP
 import { createGuardedFetch, AgentSecurityError, type GuardPolicy } from './guardrail';
 import { atlantic, NETWORK, RPC_URL } from './facilitator';
 
-const SERVER_URL = process.env.SERVER_URL ?? 'http://localhost:4021';
+const SERVER_URL = process.env.SERVER_URL ?? `http://localhost:${process.env.PORT ?? 4021}`;
 const account = privateKeyToAccount(process.env.AGENT_PK as Hex);
 const usdc = process.env.USDC_ADDRESS as Address;
 const receiver = process.env.RECEIVER_ADDRESS as Address;

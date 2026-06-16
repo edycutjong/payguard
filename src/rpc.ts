@@ -6,44 +6,7 @@
  * HTTP 200 — which viem does NOT auto-retry. This transport catches that (and transient
  * "RPC Request failed") and backs off, so server/facilitator/agent flows survive bursts.
  */
-import { http, type Transport, createPublicClient, fallback } from 'viem';
-import { mainnet } from 'viem/chains';
-
-export const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: fallback([
-    http(process.env.PRIMARY_RPC_URL, {
-      retryCount: 5,
-      retryDelay: 1000, // Enables viem's native exponential backoff calculations
-      timeout: 10000,
-      onFetchResponse: (response) => {
-        // Intercept and log primary rate limits/errors for Datadog ingestion
-        if (!response.ok || response.status === 429) {
-          console.warn(JSON.stringify({
-            level: 'WARN',
-            event: 'rpc_degradation_detected',
-            status_code: response.status,
-            message: 'Primary RPC degraded. Viem initiating exponential backoff or fallback.'
-          }));
-        }
-      }
-    }),
-    http(process.env.FALLBACK_RPC_URL, { 
-      retryCount: 3,
-      onFetchResponse: (response) => {
-        // Log if the fallback RPC is also failing
-        if (!response.ok || response.status === 429) {
-          console.error(JSON.stringify({
-            level: 'ERROR',
-            event: 'fallback_rpc_degradation',
-            status_code: response.status,
-            message: 'Fallback RPC degraded. Critical infrastructure failing.'
-          }));
-        }
-      }
-    })
-  ]),
-});
+import { http, type Transport } from 'viem';
 
 export function retryingHttp(url?: string, opts: { tries?: number; delayMs?: number } = {}): Transport {
   const tries = opts.tries ?? 8;

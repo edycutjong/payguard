@@ -36,7 +36,7 @@ contract AgentVaultTest is Test {
         vault.release(id, preimage);
         assertEq(usdc.balanceOf(payee), 100e6);
         assertEq(vault.totalLocked(), 0);
-        (, , , , , AgentVault.Status status) = vault.escrows(id);
+        (, , , AgentVault.Status status, , ) = vault.escrows(id);
         assertEq(uint8(status), uint8(AgentVault.Status.Released));
     }
 
@@ -63,7 +63,7 @@ contract AgentVaultTest is Test {
         vault.release(id, preimage);
         assertEq(usdc.balanceOf(payee), 100e6); // funds always route to the payee
         assertEq(vault.totalLocked(), 0);
-        (, , , , , AgentVault.Status status) = vault.escrows(id);
+        (, , , AgentVault.Status status, , ) = vault.escrows(id);
         assertEq(uint8(status), uint8(AgentVault.Status.Released));
     }
 
@@ -135,37 +135,9 @@ contract AgentVaultTest is Test {
         v2.release(id, preimage);
     }
 
-    // Guardian payments route straight from payer to payee via EIP-3009 — the funds
-    // must never be stranded inside the vault (the original "black hole" bug).
-    function test_GuardianPaymentTransfersPayerToPayee() public {
-        address rcv = makeAddr("guardianPayee");
-        uint256 amt = 100e6;
-        vault.executeGuardianPayment(
-            payer, rcv, amt, 0, block.timestamp + 1 hours, keccak256("g-nonce"), bytes("sig")
-        );
-        assertEq(usdc.balanceOf(rcv), amt);          // payee paid
-        assertEq(usdc.balanceOf(address(vault)), 0); // nothing trapped in the vault
-    }
-
-    // Replay protection now lives in the token (USDC consumes the nonce per `from`),
-    // not in a redundant vault-side mapping. A second use of the same nonce reverts.
-    function testFuzz_RevertOnSignatureReplay(
-        address payeeAddr,
-        uint256 amount,
-        bytes32 nonce,
-        bytes memory signature
-    ) public {
-        amount = bound(amount, 1, 1_000_000e6); // within the payer's minted balance
-        vm.assume(payeeAddr != address(0));
-        uint256 validAfter = 0;
-        uint256 validBefore = block.timestamp + 1 hours;
-
-        // 1. Initial settlement succeeds and consumes the nonce inside the token.
-        vault.executeGuardianPayment(payer, payeeAddr, amount, validAfter, validBefore, nonce, signature);
-
-        // 2. Replaying the same authorization MUST be rejected by the token.
-        vm.expectRevert(bytes("EIP3009: authorization is used"));
-        vault.executeGuardianPayment(payer, payeeAddr, amount, validAfter, validBefore, nonce, signature);
+    function test_RevertWhen_USDCZeroAddress() public {
+        vm.expectRevert(AgentVault.ZeroAddress.selector);
+        new AgentVault(address(0));
     }
 }
 

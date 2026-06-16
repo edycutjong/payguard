@@ -127,6 +127,17 @@ export interface GuardedFetchOptions {
   rpcUrl?: string;
 }
 
+function deepFreeze<T extends object>(obj: T): Readonly<T> {
+  Object.freeze(obj);
+  Object.keys(obj).forEach((key) => {
+    const prop = (obj as any)[key];
+    if (prop !== null && typeof prop === 'object' && !Object.isFrozen(prop)) {
+      deepFreeze(prop);
+    }
+  });
+  return obj;
+}
+
 /**
  * Wraps a base fetch so it enforces GuardPolicy on the 402 BEFORE x402 signs.
  * Pass the result straight into wrapFetchWithPayment(guardedFetch, client).
@@ -136,6 +147,11 @@ export function createGuardedFetch(
   policy: GuardPolicy,
   opts: GuardedFetchOptions = {},
 ) {
+  const frozenPolicy = deepFreeze({
+    ...policy,
+    allowedPayees: policy.allowedPayees ? [...policy.allowedPayees] : undefined,
+  });
+
   // Session spend lives in this closure, never on the shared `policy` object: two guarded
   // fetches built from the same policy can't bleed budget into each other, and offline
   // suites stay deterministic instead of accumulating state across cases.
@@ -143,7 +159,7 @@ export function createGuardedFetch(
 
   const simulate =
     opts.simulator ??
-    (opts.rpcUrl ? makeSimulator(opts.rpcUrl, policy.agentAddress) : undefined);
+    (opts.rpcUrl ? makeSimulator(opts.rpcUrl, frozenPolicy.agentAddress) : undefined);
 
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const res = await baseFetch(input as any, init);
@@ -157,13 +173,13 @@ export function createGuardedFetch(
     if (!req) throw new AgentSecurityError('INVALID_ASSET', 'server offered no payment requirements');
 
     let sim: SimResult | undefined;
-    if (policy.enforceSimulation !== false) {
+    if (frozenPolicy.enforceSimulation !== false) {
       if (!simulate) throw new AgentSecurityError('SIMULATION_FAILED', 'enforceSimulation set but no simulator/rpcUrl provided');
       sim = await simulate(req);
     }
 
-    const remaining = policy.dailyBudgetRemaining - sessionSpent;
-    const decision = evaluateRequirement(req, { ...policy, dailyBudgetRemaining: remaining }, sim);
+    const remaining = frozenPolicy.dailyBudgetRemaining - sessionSpent;
+    const decision = evaluateRequirement(req, { ...frozenPolicy, dailyBudgetRemaining: remaining }, sim);
     if (!decision.allowed) throw new AgentSecurityError(decision.code, decision.reason);
 
     sessionSpent += decision.amount; // commit the authorized spend to the session counter

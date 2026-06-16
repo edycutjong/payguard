@@ -29,10 +29,10 @@ contract AgentVault is ReentrancyGuard {
     struct Escrow {
         address payer;
         address payee;
-        uint256 amount;
-        bytes32 conditionHash; // keccak256(preimage) the payer must reveal to release
         uint64 deadline;       // unix seconds; after this, payer can be refunded
         Status status;
+        uint256 amount;
+        bytes32 conditionHash; // keccak256(preimage) the payer must reveal to release
     }
 
     mapping(uint256 => Escrow) public escrows;
@@ -49,8 +49,10 @@ contract AgentVault is ReentrancyGuard {
     error BadPreimage();
     error NotExpired();
     error Expired();
+    error ZeroAddress();
 
     constructor(address _usdc) {
+        if (_usdc == address(0)) revert ZeroAddress();
         usdc = IERC20(_usdc);
     }
 
@@ -74,10 +76,10 @@ contract AgentVault is ReentrancyGuard {
         escrows[id] = Escrow({
             payer: msg.sender,
             payee: payee,
-            amount: received,
-            conditionHash: conditionHash,
             deadline: deadline,
-            status: Status.Locked
+            status: Status.Locked,
+            amount: received,
+            conditionHash: conditionHash
         });
         totalLocked += received;
 
@@ -116,26 +118,5 @@ contract AgentVault is ReentrancyGuard {
 
         emit Refunded(id, payer, amount);
         usdc.safeTransfer(payer, amount);        // interaction
-    }
-
-    /// @notice Settle an EIP-3009 authorized payment straight from `payer` to `payee`.
-    /// @dev Uses `transferWithAuthorization`: the signature is bound over (from, to, value,
-    ///      validAfter, validBefore, nonce), so the destination cannot be re-pointed by a
-    ///      front-runner, and the funds never enter this vault (no black hole). Replay
-    ///      protection is the token's responsibility — USDC consumes `nonce` per `from`
-    ///      internally, so a redundant local mapping would only waste gas and add a
-    ///      cross-payer griefing surface.
-    function executeGuardianPayment(
-        address payer,
-        address payee,
-        uint256 amount,
-        uint256 validAfter,
-        uint256 validBefore,
-        bytes32 nonce,
-        bytes calldata signature
-    ) external nonReentrant {
-        IERC20WithPermit(address(usdc)).transferWithAuthorization(
-            payer, payee, amount, validAfter, validBefore, nonce, signature
-        );
     }
 }
