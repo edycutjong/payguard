@@ -16,6 +16,7 @@
 
   <br/>
 
+  [![MCP](https://img.shields.io/badge/-MCP-D4A27F?logo=modelcontextprotocol)](https://mcpx.dev)
   ![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)
   ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
   ![x402](https://img.shields.io/badge/x402-v2-8b5cf6)
@@ -132,7 +133,7 @@ Cursor, or any MCP client can ask *"is this x402 payment safe?"* before signing 
 PayGuard-specific code. Tools: `evaluate_payment` (asset · amount · payTo → `{ allowed, code, reason }`)
 and `get_policy`. Policy is operator-set via env; an agent can only **tighten** it, never widen it.
 
-![PayGuard MCP Tool Demo](docs/screenshots/mcp-demo.gif)
+<img width="720" height="500" alt="mcp-demo" src="https://github.com/user-attachments/assets/64a93d3c-92c0-4cb8-9e76-ca3f90b5e37a" />
 
 ### ♻️ Reuse & compose (the crucial Phase-1 criterion)
 One public API (`src/index.ts`), **three composition seams** — under the x402 client
