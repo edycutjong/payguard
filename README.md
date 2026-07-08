@@ -29,6 +29,20 @@
 
 ---
 
+## 🛰️ Phase 2 — Anvita Flow Service Agent
+
+PayGuard (the Phase-1 winning Skill) is packaged and staged as a **hosted Service Agent on
+[Anvita Flow](https://flow.anvita.xyz)** for the Pharos Agent Arena — one agent,
+**PayGuard — Payment Safety & Escrow**, exposing both tools so any Steward Agent can call it before it pays:
+
+- 🚦 **GuardianRail** — deterministic pre-signature x402 spend gate (caps · anti-spoof · payee allowlist · `eth_call` sim)
+- 🔒 **AgentVault** — conditional USDC escrow (`lock → release(proof) / refund`) for agent-to-agent / milestone payments
+
+The upload package (`SKILL.md` + agent card + runtime strategy) passes Anvita's **Skill Check** and
+**Debugging** checks; on-chain settlement stays anchored to Pharos directly (688689,
+[tx `0xfd6e66…bc253`](https://atlantic.pharosscan.xyz/tx/0xfd6e66157765066d9ff76068ee9476549153ade951036f3f7863a29f2ffbc253)),
+independent of Anvita's still-beta billing. *Formal publish opens at Round 2; the agent is staged and submission-ready.*
+
 ## 🚀 Run it — for judges
 
 > **Verify the core claims in 30 seconds — zero keys, zero accounts, fully offline:**
