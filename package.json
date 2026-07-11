@@ -79,6 +79,6 @@
     "solhint": "^6.2.3",
     "tsup": "^8.5.1",
     "tsx": "^4.6.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
