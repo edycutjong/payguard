@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/edycutjong/payguard/compare/payguard-v0.2.0...payguard-v0.2.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **deps:** resolve 6 dependency vulnerabilities via lockfile ([0fef6e8](https://github.com/edycutjong/payguard/commit/0fef6e8c554a64487c2eb875a5e194e3c6f4bf74))
+
 ## [0.2.0](https://github.com/edycutjong/payguard/compare/payguard-v0.1.5...payguard-v0.2.0) (2026-07-08)
 
 
